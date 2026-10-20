@@ -12,3 +12,7 @@ xcuserdata/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 安装包和二维码由 CI 产物生成，不进仓库
+dist/*.ipa
+dist/*.png
