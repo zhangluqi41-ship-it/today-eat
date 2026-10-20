@@ -1,0 +1,14 @@
+# 构建产物与本机临时文件
+build/
+out/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# WorkBuddy 的工作目录（含记忆与临时截图），不进公开仓库
+.workbuddy/
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+desktop.ini

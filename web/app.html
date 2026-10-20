@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff6ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="今晚吃什么">
+<link rel="apple-touch-icon" href="__ICON__">
+<title>今晚吃什么</title>
+<style>
+:root{
+  --bg:#f2f2f7; --card:#ffffff; --text:#111114; --sub:#6b6b74; --sep:rgba(60,60,67,.14);
+  --accent:#f4702b; --accent-2:#ff9a56; --accent-soft:rgba(244,112,43,.12);
+  --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.18);
+  --green:#1f9d55; --yellow:#c98a00;
+  --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#000000; --card:#1c1c1e; --text:#f2f2f7; --sub:#9a9aa3; --sep:rgba(255,255,255,.13);
+    --accent:#ff8a45; --accent-soft:rgba(255,138,69,.16); --fill:rgba(120,120,128,.24);
+    --fill-2:rgba(120,120,128,.34); --green:#3ddc84; --yellow:#ffd166;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text)}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.45;
+  padding-bottom:calc(64px + var(--safe-bottom));
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{border:0;background:none;cursor:pointer}
+h1,h2,h3,p{margin:0}
+.app{max-width:560px;margin:0 auto;min-height:100vh}
+
+/* 顶部 */
+.topbar{
+  position:sticky;top:0;z-index:20;padding:calc(8px + var(--safe-top)) 16px 8px;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border-bottom:.5px solid transparent;
+}
+.topbar.scrolled{border-bottom-color:var(--sep)}
+.topbar .brand{font-size:13px;font-weight:600;color:var(--sub);letter-spacing:.04em}
+.topbar .title{font-size:17px;font-weight:700}
+.icon-btn{width:36px;height:36px;display:grid;place-items:center;border-radius:50%;color:var(--accent)}
+.icon-btn:active{background:var(--fill)}
+svg{display:block}
+
+.page{padding:4px 0 24px;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.large-title{font-size:32px;font-weight:800;letter-spacing:-.02em;padding:6px 16px 10px}
+.section-title{font-size:13px;font-weight:600;color:var(--sub);padding:16px 20px 6px;letter-spacing:.02em}
+
+.card{background:var(--card);border-radius:14px;margin:8px 16px;padding:14px}
+.card-title{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;border-bottom:.5px solid var(--sep)}
+.row:last-child{border-bottom:0}
+.row>span{flex:1}
+.row .value{color:var(--sub);font-variant-numeric:tabular-nums}
+.hint{font-size:12px;color:var(--sub);padding-top:8px}
+.hint.block{padding:4px 4px 0}
+
+/* 抽签主卡 */
+.hero{text-align:center;padding:22px 16px 16px}
+.hero-emoji{font-size:52px;line-height:1.1}
+.hero-name{font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:6px;min-height:44px;display:flex;align-items:center;justify-content:center;word-break:break-all}
+.hero-meta{color:var(--sub);font-size:13px;margin-top:4px;min-height:18px}
+.hero-actions{display:flex;gap:10px;margin-top:16px}
+.hero-actions .btn{flex:1}
+
+.btn{
+  min-height:44px;border-radius:12px;padding:0 16px;background:var(--fill);
+  font-size:16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:transform .12s ease, opacity .12s ease;
+}
+.btn:active{transform:scale(.975);opacity:.85}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.danger{background:rgba(255,59,48,.14);color:#ff3b30}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.btn.small{min-height:34px;font-size:14px;padding:0 12px;border-radius:10px}
+.btn.wide{display:flex;width:calc(100% - 32px);margin:8px 16px}
+.row2{display:flex;gap:10px;margin:10px 16px}
+.row2 .btn{flex:1;min-height:42px;font-size:15px}
+
+/* 列表 */
+.list{background:var(--card);border-radius:14px;margin:8px 16px;overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:11px 14px;min-height:56px;border-bottom:.5px solid var(--sep);position:relative}
+.item:last-child{border-bottom:0}
+.item:active{background:var(--fill)}
+.item .emoji{font-size:22px;width:30px;text-align:center}
+.item .main{flex:1;min-width:0}
+.item .name{font-size:16px;font-weight:500;display:flex;align-items:center;gap:6px}
+.item .meta{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .trail{color:var(--sub);font-size:13px;font-variant-numeric:tabular-nums}
+.item .chev{color:var(--fill-2);font-size:15px}
+.star{color:var(--yellow);font-size:11px}
+
+/* 顶部工具 */
+.tools{display:flex;gap:8px;padding:0 16px 6px}
+.search{
+  width:100%;min-height:38px;border-radius:10px;border:0;background:var(--fill);
+  padding:0 12px;font-size:15px;outline:none;
+}
+.search::placeholder{color:var(--sub)}
+.tools .search{flex:1;min-width:0;width:auto}
+.tools .btn{flex:0 0 auto;white-space:nowrap}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:6px 16px 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto;min-height:32px;padding:0 14px;border-radius:16px;background:var(--fill);
+  font-size:14px;color:var(--text);display:flex;align-items:center;white-space:nowrap;
+}
+.chip.on{background:var(--accent);color:#fff}
+
+/* 底部 tab */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  padding:6px 8px calc(6px + var(--safe-bottom));
+  display:flex;justify-content:space-around;
+  background:color-mix(in srgb,var(--bg) 78%,transparent);
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-top:.5px solid var(--sep);
+}
+.tab{width:20%;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;color:var(--sub);font-size:10px}
+.tab svg{width:24px;height:24px}
+.tab.on{color:var(--accent)}
+.tab:active{opacity:.6}
+
+/* 详情 / 弹层 */
+.sheet{
+  position:fixed;inset:0;z-index:50;background:var(--bg);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(24px + var(--safe-bottom));
+  animation:slideUp .26s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes slideUp{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-head{
+  position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;
+  padding:calc(10px + var(--safe-top)) 16px 10px;
+  background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:blur(18px);
+  border-bottom:.5px solid var(--sep);font-weight:600;
+}
+.sheet-head button{color:var(--accent);font-size:16px;font-weight:500}
+.sheet-body{padding:16px 16px 96px}
+.detail-name{font-size:28px;font-weight:800;letter-spacing:-.02em;text-align:center;margin-top:6px}
+.detail-sub{text-align:center;color:var(--sub);font-size:13px;margin-top:4px}
+.detail-emoji{font-size:44px;text-align:center}
+.tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:12px;color:var(--sub);background:var(--fill);border-radius:8px;padding:3px 8px}
+.ing{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:15px;border-bottom:.5px solid var(--sep)}
+.ing:last-child{border-bottom:0}
+.ing .amt{color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ing.done .nm{text-decoration:line-through;color:var(--sub)}
+.step{display:flex;gap:10px;padding:9px 0}
+.step .idx{color:var(--accent);font-weight:800;font-size:15px;min-width:18px;font-variant-numeric:tabular-nums}
+.step .txt{flex:1;font-size:15.5px;line-height:1.55}
+.tips{font-size:14px;line-height:1.6}
+.bottom-bar{
+  position:sticky;bottom:0;display:flex;gap:10px;padding:10px 16px calc(10px + var(--safe-bottom));
+  background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(18px);
+  border-top:.5px solid var(--sep);
+}
+.bottom-bar .btn{flex:1}
+
+/* 编辑表单 */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:13px;color:var(--sub);font-weight:600}
+.field input,.field textarea,.field select{
+  width:100%;border:0;border-radius:10px;background:var(--fill);padding:11px 12px;font-size:15px;outline:none;
+}
+.field textarea{resize:vertical;min-height:64px;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ing-edit{display:flex;gap:8px;margin-bottom:8px}
+.ing-edit input{flex:1;min-height:40px;border:0;border-radius:10px;background:var(--fill);padding:0 10px;font-size:14px;outline:none}
+.ing-edit input.amt{flex:0 0 92px}
+.ing-edit select{flex:0 0 84px;border:0;border-radius:10px;background:var(--fill);font-size:13px;padding:0 4px}
+
+/* 烹饪模式 */
+.cook{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;padding:calc(12px + var(--safe-top)) 20px calc(16px + var(--safe-bottom))}
+.cook-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--sub)}
+.cook-step{flex:1;display:flex;align-items:center;font-size:24px;line-height:1.5;font-weight:500;padding:20px 0}
+.cook-foot{display:flex;gap:10px}
+.cook-foot .btn{flex:1}
+.timer{display:flex;align-items:center;gap:12px;margin-top:12px}
+.timer .clock{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.bar{height:6px;border-radius:3px;background:var(--fill);overflow:hidden;flex:1}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .4s linear}
+.notice{background:var(--accent-soft);color:var(--accent);font-size:13px;padding:10px 14px;border-radius:12px;margin:8px 16px}
+.empty{text-align:center;color:var(--sub);padding:36px 24px;font-size:14px}
+.empty .big{font-size:34px;margin-bottom:8px}
+.toast{
+  position:fixed;left:50%;bottom:calc(84px + var(--safe-bottom));transform:translateX(-50%) translateY(10px);
+  background:rgba(30,30,32,.92);color:#fff;font-size:14px;padding:9px 16px;border-radius:12px;
+  opacity:0;transition:.22s;z-index:90;pointer-events:none;max-width:80vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.switch{width:51px;height:31px;border-radius:16px;background:var(--fill-2);position:relative;transition:.18s;flex:0 0 51px}
+.switch>i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.18s}
+.switch.on{background:var(--accent)}
+.switch.on>i{left:22px}
+select{-webkit-appearance:none;appearance:none;background:transparent;border:0;color:var(--sub);font-size:15px;text-align:right;padding:8px 0}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 16px}
+.stat{background:var(--card);border-radius:14px;padding:14px 10px;text-align:center}
+.stat b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--sub)}
+.link{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar" id="topbar">
+    <div class="brand">今晚吃什么</div>
+    <button class="icon-btn" data-act="goto-history" aria-label="做饭记录">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </button>
+  </header>
+  <main id="screen"></main>
+</div>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab" data-act="tab" data-tab="tonight">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
+    <span>今晚</span>
+  </button>
+  <button class="tab" data-act="tab" data-tab="recipes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 19a2 2 0 0 1 2-2h13"/></svg>
+    <span>菜谱</span>
+  </button>
+  <button class="tab" data-act="tab" data-tab="kitchen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 9h18l-1.6 9.2A2 2 0 0 1 17.4 20H6.6a2 2 0 0 1-2-1.8z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/></svg>
+    <span>厨房</span>
+  </button>
+  <button class="tab" data-act="tab" data-tab="list">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h10M4 12h10M4 17h10"/><path d="M18 6.5l1.4 1.4L22 5.5"/><circle cx="19.5" cy="12" r="2.2"/><path d="M19.5 17v4"/></svg>
+    <span>清单</span>
+  </button>
+  <button class="tab" data-act="tab" data-tab="me">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.8 4.2-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg>
+    <span>我的</span>
+  </button>
+</nav>
+
+<div id="sheet"></div>
+<div id="toast" class="toast"></div>
+
+<script id="seed" type="application/json">__RECIPES__</script>
+<script>
+"use strict";
+
+const CATS = [
+  {key:"pork", name:"猪肉", emoji:"🍖"},
+  {key:"poultry", name:"禽类", emoji:"🍗"},
+  {key:"beef", name:"牛肉", emoji:"🥩"},
+  {key:"veggie", name:"蔬菜", emoji:"🥬"},
+  {key:"tofu", name:"豆制品", emoji:"🫘"},
+  {key:"egg", name:"蛋类", emoji:"🥚"}
+];
+const SEED = JSON.parse(document.getElementById("seed").textContent);
+const KEY = "todayeat.v1";
+
+const defaultState = () => ({
+  tab: "tonight",
+  recipes: SEED.dishes.map(d => Object.assign({}, d)),
+  favorites: [],
+  records: [],
+  shopping: [],
+  plan: [],
+  inventory: [],
+  settings: {servings:2, maxMinutes:90, maxSpicy:3, avoidDays:3, avoidRecent:true, onlyFavorites:false, kind:"", dislikes:[]}
+});
+
+let S = loadState();
+let ui = {pick:null, rolling:false, triple:[], query:"", cat:"", listTab:0, showAllMatches:false, checked:{}, cooking:null};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return defaultState();
+    const data = JSON.parse(raw);
+    const base = defaultState();
+    if(!Array.isArray(data.recipes) || data.recipes.length === 0) data.recipes = base.recipes;
+    data.settings = Object.assign({}, base.settings, data.settings || {});
+    ["favorites","records","shopping","plan","inventory"].forEach(k => { if(!Array.isArray(data[k])) data[k] = []; });
+    return data;
+  }catch(e){ return defaultState(); }
+}
+let saveTimer = null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+  }, 120);
+}
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const byId = id => S.recipes.find(r => r.id === id);
+const catOf = key => CATS.find(c => c.key === key) || {name:"其他", emoji:"🍽️"};
+const uid = () => "x" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const dayKey = d => { const x = new Date(d); return x.getFullYear() + "-" + String(x.getMonth()+1).padStart(2,"0") + "-" + String(x.getDate()).padStart(2,"0"); };
+const todayKey = () => dayKey(new Date());
+const WEEK = ["周日","周一","周二","周三","周四","周五","周六"];
+const pad = n => String(n).padStart(2,"0");
+function daysFromToday(n){
+  const out = [];
+  const base = new Date(); base.setHours(0,0,0,0);
+  for(let i=0;i<n;i++){ const d = new Date(base); d.setDate(base.getDate()+i); out.push(d); }
+  return out;
+}
+function md(d){ return (d.getMonth()+1) + "月" + d.getDate() + "日"; }
+function hhmm(d){ const x = new Date(d); return pad(x.getHours()) + ":" + pad(x.getMinutes()); }
+
+function scaleAmount(recipe, amount, servings){
+  const base = recipe.baseServings || 2;
+  if(!servings || servings === base) return amount;
+  const m = String(amount).match(/^(\d+(\.\d+)?)(.*)$/);
+  if(!m) return amount;
+  const v = parseFloat(m[1]) * servings / base;
+  const num = Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(1);
+  return num + m[3];
+}
+function recentlyCooked(){
+  if(!S.settings.avoidRecent) return new Set();
+  const cutoff = Date.now() - S.settings.avoidDays * 86400000;
+  return new Set(S.records.filter(r => new Date(r.date).getTime() >= cutoff).map(r => r.recipeID));
+}
+function pool(){
+  const avoid = recentlyCooked();
+  return S.recipes.filter(r => {
+    if(r.minutes > S.settings.maxMinutes) return false;
+    if(r.spicy > S.settings.maxSpicy) return false;
+    if(S.settings.kind && r.kind !== S.settings.kind) return false;
+    if(S.settings.onlyFavorites && !S.favorites.includes(r.id)) return false;
+    if(S.settings.avoidRecent && avoid.has(r.id)) return false;
+    const bad = S.settings.dislikes.some(w => w && (r.ingredients || []).some(i => i.name.includes(w)));
+    return !bad;
+  });
+}
+function matchesKeyword(r, q){
+  if(!q) return true;
+  const text = q.trim();
+  return r.name.includes(text) || (r.tags||[]).some(t => t.includes(text)) || (r.ingredients||[]).some(i => i.name.includes(text));
+}
+function toast(text){
+  const el = document.getElementById("toast");
+  el.textContent = text;
+  el.classList.add("on");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("on"), 1600);
+}
+function buzz(ms){ if(navigator.vibrate) navigator.vibrate(ms || 12); }
+
+/* ---------- 渲染入口 ---------- */
+function render(){
+  const screen = document.getElementById("screen");
+  let body = "";
+  if(S.tab === "tonight") body = viewTonight();
+  else if(S.tab === "recipes") body = viewRecipes();
+  else if(S.tab === "kitchen") body = viewKitchen();
+  else if(S.tab === "list") body = viewList();
+  else body = viewMe();
+  screen.innerHTML = '<section class="page">' + body + "</section>";
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.tab === S.tab));
+  wire();
+}
+
+/* ---------- 今晚 ---------- */
+function viewTonight(){
+  const p = pool();
+  const pick = ui.pick ? byId(ui.pick) : null;
+  const recent = S.records.slice(0,3);
+  return `
+  <h1 class="large-title">今晚吃什么</h1>
+  <div class="card hero">
+    <div class="hero-emoji">${pick ? catOf(pick.category).emoji : "🎲"}</div>
+    <div class="hero-name" id="heroName">${esc(ui.rollingName || (pick ? pick.name : "还没抽"))}</div>
+    <div class="hero-meta">${pick ? pick.minutes + " 分钟 · " + diffText(pick.difficulty) + " · " + spicyText(pick.spicy) : "不想动脑子的时候，点下面那个按钮"}</div>
+    <div class="hero-actions">
+      <button class="btn primary" data-act="roll" ${p.length === 0 || ui.rolling ? "disabled" : ""}>${ui.rolling ? "正在抽…" : "抽一个"}</button>
+      <button class="btn" data-act="decide" ${!pick || ui.rolling ? "disabled" : ""}>就它了</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">抽签范围</div>
+    <label class="row"><span>只要</span>
+      <select data-set="kind">
+        <option value="" ${S.settings.kind===""?"selected":""}>不限</option>
+        <option value="荤" ${S.settings.kind==="荤"?"selected":""}>荤菜</option>
+        <option value="素" ${S.settings.kind==="素"?"selected":""}>素菜</option>
+        <option value="汤" ${S.settings.kind==="汤"?"selected":""}>汤水</option>
+        <option value="蛋" ${S.settings.kind==="蛋"?"selected":""}>蛋类</option>
+        <option value="豆" ${S.settings.kind==="豆"?"selected":""}>豆制品</option>
+      </select>
+    </label>
+    <label class="row"><span>最多花多少时间</span>
+      <select data-set="maxMinutes">
+        ${[30,45,60,90,120,180].map(v => `<option value="${v}" ${S.settings.maxMinutes==v?"selected":""}>${v>=180?"不限":v+" 分钟"}</option>`).join("")}
+      </select>
+    </label>
+    <label class="row"><span>辣度上限</span>
+      <select data-set="maxSpicy">
+        ${[0,1,2,3].map(v => `<option value="${v}" ${S.settings.maxSpicy==v?"selected":""}>${spicyText(v)}</option>`).join("")}
+      </select>
+    </label>
+    <label class="row"><span>跳过最近吃过的</span>
+      <button class="switch ${S.settings.avoidRecent?"on":""}" data-act="toggle" data-key="avoidRecent"><i></i></button>
+    </label>
+    ${S.settings.avoidRecent ? `<label class="row"><span>回看天数</span><input type="number" min="1" max="30" value="${S.settings.avoidDays}" data-set="avoidDays" style="width:56px;text-align:right;border:0;background:transparent;color:var(--sub)"></label>` : ""}
+    <div class="hint">现在有 <b>${p.length}</b> 道可选${S.settings.dislikes.length ? "，已避开 " + S.settings.dislikes.length + " 项忌口" : ""}</div>
+  </div>
+
+  <div class="row2">
+    <button class="btn" data-act="triple" ${p.length===0?"disabled":""}>三选一</button>
+    <button class="btn" data-act="fill-plan">排满这周晚餐</button>
+  </div>
+
+  ${recent.length ? `<div class="section-title">最近吃过</div>
+  <div class="list">
+    ${recent.map(r => {
+      const rec = byId(r.recipeID);
+      return `<div class="item" data-act="detail" data-id="${esc(r.recipeID)}">
+        <div class="emoji">${rec ? catOf(rec.category).emoji : "🍽️"}</div>
+        <div class="main"><div class="name">${esc(r.recipeName)}</div><div class="meta">${md(new Date(r.date))} ${hhmm(r.date)}${r.rating ? " · " + "★".repeat(r.rating) : ""}</div></div>
+        <button class="btn small" data-act="cook-again" data-id="${esc(r.recipeID)}">再吃</button>
+      </div>`;
+    }).join("")}
+  </div>` : ""}
+  `;
+}
+function diffText(d){ return d === 1 ? "简单" : d === 2 ? "中等" : "有点讲究"; }
+function spicyText(v){ return ["不辣","微辣","中辣","很辣"][v] || "不辣"; }
+
+function rollDice(){
+  const p = pool();
+  if(!p.length){ toast("没有符合条件的菜，放宽一点试试"); return; }
+  ui.rolling = true;
+  render();
+  let count = 0;
+  const timer = setInterval(() => {
+    count++;
+    const name = p[Math.floor(Math.random()*p.length)].name;
+    const el = document.getElementById("heroName");
+    if(el) el.textContent = name;
+    if(count > 15){
+      clearInterval(timer);
+      ui.rolling = false;
+      ui.pick = p[Math.floor(Math.random()*p.length)].id;
+      render();
+      buzz(16);
+    }
+  }, 70);
+}
+function decide(){
+  if(!ui.pick) return;
+  const r = byId(ui.pick);
+  if(!r) return;
+  S.records.unshift({id:uid(), recipeID:r.id, recipeName:r.name, date:new Date().toISOString(), rating:0, note:""});
+  save(); buzz(20);
+  openDetail(r.id);
+}
+
+/* ---------- 菜谱 ---------- */
+function viewRecipes(){
+  const q = ui.query.trim();
+  let list = S.recipes.filter(r => (!ui.cat || r.category === ui.cat) && matchesKeyword(r, q));
+  if(S.settings.onlyFavorites) list = list.filter(r => S.favorites.includes(r.id));
+  const groups = ui.cat || q
+    ? [{name:q ? `搜到 ${list.length} 道` : `${catOf(ui.cat).name} · ${list.length} 道`, items:list}]
+    : CATS.map(c => ({name:`${c.emoji} ${c.name}`, items:list.filter(r => r.category === c.key)})).filter(g => g.items.length);
+  return `
+  <h1 class="large-title" style="display:flex;align-items:center;justify-content:space-between">
+    <span>菜谱</span>
+    <button class="btn small" data-act="new-recipe" style="margin-right:0">＋ 新菜</button>
+  </h1>
+  <div class="tools"><input class="search" id="q" placeholder="搜菜名、食材、标签" value="${esc(ui.query)}"></div>
+  <div class="chips">
+    <button class="chip ${ui.cat===""?"on":""}" data-act="cat" data-cat="">全部 ${S.recipes.length}</button>
+    ${CATS.map(c => `<button class="chip ${ui.cat===c.key?"on":""}" data-act="cat" data-cat="${c.key}">${c.emoji} ${c.name}</button>`).join("")}
+    <button class="chip" data-act="toggle-fav-filter">${S.settings.onlyFavorites ? "★ 只看收藏" : "☆ 收藏"}</button>
+  </div>
+  ${list.length === 0 ? `<div class="empty"><div class="big">🍽️</div>没搜到，换个词试试</div>` : ""}
+  ${groups.map(g => `
+    <div class="section-title">${esc(g.name)}</div>
+    <div class="list">
+      ${g.items.map(r => `
+        <div class="item" data-act="detail" data-id="${esc(r.id)}">
+          <div class="emoji">${catOf(r.category).emoji}</div>
+          <div class="main">
+            <div class="name">${esc(r.name)}${S.favorites.includes(r.id) ? '<span class="star">★</span>' : ""}</div>
+            <div class="meta">${r.minutes} 分钟 · ${diffText(r.difficulty)} · ${spicyText(r.spicy)}${r.tags && r.tags.length ? " · " + esc(r.tags[0]) : ""}</div>
+          </div>
+          <div class="chev">›</div>
+        </div>`).join("")}
+    </div>`).join("")}
+  <div style="height:16px"></div>
+  `;
+}
+
+/* ---------- 厨房 ---------- */
+function matchResults(){
+  const stock = S.inventory.map(w => w.toLowerCase());
+  if(!stock.length) return [];
+  const out = [];
+  S.recipes.forEach(r => {
+    const main = (r.ingredients||[]).filter(i => i.group === "主料");
+    if(!main.length) return;
+    const matched = [], missing = [];
+    main.forEach(i => {
+      const key = i.name.toLowerCase();
+      const hit = stock.some(w => key.includes(w) || w.includes(key));
+      (hit ? matched : missing).push(i.name);
+    });
+    if(matched.length) out.push({recipe:r, matched, missing});
+  });
+  out.sort((a,b) => a.missing.length - b.missing.length || b.matched.length - a.matched.length);
+  return out;
+}
+function viewKitchen(){
+  const res = matchResults();
+  const shown = ui.showAllMatches ? res : res.slice(0,20);
+  const quick = ["鸡蛋","番茄","土豆","豆腐","五花肉","鸡腿","牛腩","青椒","洋葱","香菇","白菜","粉丝"];
+  return `
+  <h1 class="large-title">厨房</h1>
+  <div class="card">
+    <div class="card-title">家里有什么</div>
+    <div class="tools" style="padding:0;margin-bottom:8px">
+      <input class="search" id="inv" placeholder="比如：鸡蛋">
+      <button class="btn small" data-act="add-inv">添加</button>
+    </div>
+    ${S.inventory.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:8px 0">
+      ${S.inventory.map(w => `<button class="chip" data-act="del-inv" data-word="${esc(w)}">${esc(w)} ×</button>`).join("")}
+    </div>` : ""}
+    <div class="chips" style="padding:8px 0 0">
+      ${quick.map(w => `<button class="chip" data-act="quick-inv" data-word="${esc(w)}" style="font-size:13px;min-height:28px">＋${esc(w)}</button>`).join("")}
+    </div>
+  </div>
+  ${S.inventory.length === 0 ? `<div class="empty"><div class="big">🧺</div>先告诉我冰箱里有什么，<br>我按“还差几样”给你排菜</div>` :
+    `<div class="section-title">能做 ${res.length} 道（只算主料）</div>
+    <div class="list">
+      ${shown.map(x => `<div class="item" data-act="detail" data-id="${esc(x.recipe.id)}">
+        <div class="emoji">${catOf(x.recipe.category).emoji}</div>
+        <div class="main">
+          <div class="name">${esc(x.recipe.name)}</div>
+          <div class="meta">${x.missing.length === 0 ? "主料都有，可以开火" : "还差：" + esc(x.missing.slice(0,3).join("、"))}</div>
+        </div>
+        <div class="trail">${x.missing.length === 0 ? "齐了" : "差 " + x.missing.length + " 样"}</div>
+      </div>`).join("")}
+    </div>
+    ${res.length > 20 ? `<button class="btn wide" data-act="toggle-matches">${ui.showAllMatches ? "收起来" : "看全部 " + res.length + " 道"}</button>` : ""}`}
+  <div style="height:16px"></div>`;
+}
+
+/* ---------- 清单 / 周菜单 ---------- */
+function planEntry(d, slot){ return S.plan.find(p => p.day === dayKey(d) && p.slot === slot); }
+function viewList(){
+  const pending = S.shopping.filter(i => !i.done);
+  const done = S.shopping.filter(i => i.done);
+  return `
+  <h1 class="large-title" style="display:flex;align-items:center;justify-content:space-between">
+    <span>${ui.listTab === 0 ? "购物清单" : "这周菜单"}</span>
+    ${ui.listTab === 0
+      ? `<button class="btn small" data-act="add-shopping">＋ 按菜谱加</button>`
+      : `<button class="btn small" data-act="fill-plan">自动排满</button>`}
+  </h1>
+  <div class="tools">
+    <div class="chips" style="padding:0;width:100%">
+      <button class="chip ${ui.listTab===0?"on":""}" data-act="list-tab" data-v="0">购物清单</button>
+      <button class="chip ${ui.listTab===1?"on":""}" data-act="list-tab" data-v="1">这周菜单</button>
+    </div>
+  </div>
+  ${ui.listTab === 0 ? `
+    ${S.shopping.length === 0 ? `<div class="empty"><div class="big">🧾</div>清单是空的，<br>在菜谱里点「加入清单」</div>` : ""}
+    ${pending.length ? `<div class="section-title">要买 ${pending.length} 样</div><div class="list">
+      ${pending.map(i => `<div class="item" data-act="check-shop" data-id="${i.id}">
+        <div class="emoji">${"○"}</div>
+        <div class="main"><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.fromRecipe || "")}</div></div>
+        <div class="trail">${esc(i.amount)}</div>
+      </div>`).join("")}
+    </div>` : ""}
+    ${done.length ? `<div class="section-title">已经买到</div><div class="list">
+      ${done.map(i => `<div class="item" data-act="check-shop" data-id="${i.id}" style="opacity:.6">
+        <div class="emoji" style="color:var(--accent)">✓</div>
+        <div class="main"><div class="name" style="text-decoration:line-through">${esc(i.name)}</div></div>
+        <div class="trail">${esc(i.amount)}</div>
+      </div>`).join("")}
+    </div>
+    <button class="btn wide" data-act="clear-done">清掉已买的</button>` : ""}
+  ` : `
+    ${daysFromToday(7).map(d => {
+      const key = dayKey(d);
+      const isToday = key === todayKey();
+      return `<div class="section-title">${isToday ? "今天 · " : ""}${md(d)} ${WEEK[d.getDay()]}</div>
+      <div class="list">
+        ${["午","晚"].map(slot => {
+          const e = planEntry(d, slot);
+          return `<div class="item" data-act="plan-slot" data-day="${key}" data-slot="${slot}">
+            <div class="emoji" style="font-size:14px;color:var(--sub)">${slot}</div>
+            <div class="main"><div class="name" style="color:${e ? "var(--text)" : "var(--sub)"}">${esc(e ? e.recipeName : "还没定")}</div></div>
+            <div class="chev">＋</div>
+          </div>`;
+        }).join("")}
+      </div>`;
+    }).join("")}
+  `}
+  <div style="height:16px"></div>`;
+}
+
+/* ---------- 我的 ---------- */
+function viewMe(){
+  const rated = S.records.filter(r => r.rating > 0);
+  const avg = rated.length ? (rated.reduce((a,b) => a+b.rating,0)/rated.length).toFixed(1) : "—";
+  const favs = S.recipes.filter(r => S.favorites.includes(r.id));
+  return `
+  <h1 class="large-title">我的</h1>
+  <div class="stat-grid">
+    <div class="stat"><b>${S.recipes.length}</b><span>道菜谱</span></div>
+    <div class="stat"><b>${S.records.length}</b><span>做过次数</span></div>
+    <div class="stat"><b>${avg}</b><span>平均评分</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">默认设置</div>
+    <label class="row"><span>默认份量</span>
+      <select data-set="servings">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${S.settings.servings==v?"selected":""}>${v} 人</option>`).join("")}</select>
+    </label>
+    <label class="row"><span>时间上限</span>
+      <select data-set="maxMinutes">${[30,45,60,90,120,180].map(v => `<option value="${v}" ${S.settings.maxMinutes==v?"selected":""}>${v>=180?"不限":v+" 分钟"}</option>`).join("")}</select>
+    </label>
+    <label class="row"><span>辣度上限</span>
+      <select data-set="maxSpicy">${[0,1,2,3].map(v => `<option value="${v}" ${S.settings.maxSpicy==v?"selected":""}>${spicyText(v)}</option>`).join("")}</select>
+    </label>
+    <label class="row"><span>只从收藏里抽</span>
+      <button class="switch ${S.settings.onlyFavorites?"on":""}" data-act="toggle" data-key="onlyFavorites"><i></i></button>
+    </label>
+  </div>
+
+  <div class="card">
+    <div class="card-title">忌口（不吃的食材）</div>
+    <div class="tools" style="padding:0">
+      <input class="search" id="dislike" placeholder="比如：香菜">
+      <button class="btn small" data-act="add-dislike">加入</button>
+    </div>
+    ${S.settings.dislikes.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+      ${S.settings.dislikes.map(w => `<button class="chip" data-act="del-dislike" data-word="${esc(w)}">${esc(w)} ×</button>`).join("")}
+    </div>` : `<div class="hint">配料里出现这些词，就不会被抽到。</div>`}
+  </div>
+
+  <div class="section-title">收藏 ${favs.length} 道</div>
+  <div class="list">
+    ${favs.length ? favs.map(r => `<div class="item" data-act="detail" data-id="${esc(r.id)}">
+      <div class="emoji">${catOf(r.category).emoji}</div>
+      <div class="main"><div class="name">${esc(r.name)}</div><div class="meta">${r.minutes} 分钟 · ${diffText(r.difficulty)}</div></div>
+      <div class="chev">›</div></div>`).join("") : `<div class="item"><div class="main"><div class="meta">还没有收藏，进菜谱点右上角 ☆</div></div></div>`}
+  </div>
+
+  <div class="section-title">做饭记录</div>
+  <div class="list">
+    ${S.records.length ? S.records.slice(0,20).map(r => `<div class="item" data-act="detail" data-id="${esc(r.recipeID)}">
+      <div class="emoji" style="font-size:14px;color:var(--sub)">${hhmm(r.date)}</div>
+      <div class="main"><div class="name">${esc(r.recipeName)}</div><div class="meta">${md(new Date(r.date))}${r.rating ? " · " + "★".repeat(r.rating) : ""}</div></div>
+    </div>`).join("") : `<div class="item"><div class="main"><div class="meta">还没有记录</div></div></div>`}
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">数据</div>
+    <button class="btn wide" style="margin:8px 0;width:100%" data-act="export">导出备份文件</button>
+    <button class="btn wide" style="margin:8px 0;width:100%" data-act="import">从备份恢复</button>
+    <button class="btn wide" style="margin:8px 0;width:100%" data-act="restore">恢复内置菜谱</button>
+    <button class="btn wide danger" style="margin:8px 0 0;width:100%" data-act="clear-records">清空做饭记录</button>
+    <div class="hint">数据只存在这台设备的浏览器里。换设备前记得导出。</div>
+  </div>
+  <div style="height:20px"></div>`;
+}
+
+/* ---------- 详情 ---------- */
+function openDetail(id){
+  const r = byId(id);
+  if(!r) return;
+  ui.checked = {};
+  ui.detailId = id;
+  ui.servings = S.settings.servings;
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <button data-act="close-sheet">关闭</button>
+      <span>${esc(catOf(r.category).name)}</span>
+      <button data-act="detail-menu" data-id="${esc(r.id)}">⋯</button>
+    </div>
+    <div class="sheet-body">
+      <div class="detail-emoji">${catOf(r.category).emoji}</div>
+      <div class="detail-name">${esc(r.name)}${S.favorites.includes(r.id) ? ' <span class="star">★</span>' : ""}</div>
+      <div class="detail-sub">${r.minutes} 分钟 · ${diffText(r.difficulty)} · ${spicyText(r.spicy)} · ${r.steps.length} 步</div>
+      ${r.tags && r.tags.length ? `<div class="tags">${r.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}
+
+      <div class="card" style="margin:16px 0 8px">
+        <div class="row"><span>份量</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn small" data-act="serv" data-v="-1">−</button>
+            <span id="servVal" style="min-width:44px;text-align:center">${ui.servings} 人</span>
+            <button class="btn small" data-act="serv" data-v="1">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="padding-left:4px">配料</div>
+      <div class="card" style="margin:0">
+        ${(r.ingredients||[]).map((i, idx) => `<div class="ing" data-act="check-ing" data-key="${esc(i.name)}">
+          <span class="nm">${esc(i.name)}</span>
+          <span class="amt" data-amt="${idx}">${esc(scaleAmount(r, i.amount, ui.servings))}</span>
+        </div>`).join("")}
+      </div>
+
+      <div class="section-title" style="padding-left:4px">做法</div>
+      <div class="card" style="margin:0">
+        ${r.steps.map((s,idx) => `<div class="step"><div class="idx">${idx+1}</div><div class="txt">${esc(s)}</div></div>`).join("")}
+      </div>
+
+      ${r.tips ? `<div class="section-title" style="padding-left:4px">关键窍门</div>
+      <div class="card" style="margin:0"><div class="tips">${esc(r.tips)}</div></div>` : ""}
+
+      <div class="hint" style="padding:14px 4px">来源：${esc(r.source || "内置菜谱")} · 用量按 ${r.baseServings || 2} 人份记录，改份量会自动换算</div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn primary" data-act="start-cook" data-id="${esc(r.id)}">开始做菜</button>
+      <button class="btn" data-act="add-shop" data-id="${esc(r.id)}">加清单</button>
+      <button class="btn" data-act="fav" data-id="${esc(r.id)}">${S.favorites.includes(r.id) ? "★" : "☆"}</button>
+    </div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+}
+function closeSheet(){
+  document.getElementById("sheet").innerHTML = "";
+  document.body.style.overflow = "";
+  render();
+}
+
+/* ---------- 编辑 ---------- */
+function openEditor(id){
+  const isNew = !id;
+  const r = isNew ? {id:"mine-"+uid(), name:"", category:"pork", kind:"荤", minutes:20, difficulty:1, spicy:0, tags:[], ingredients:[{name:"",amount:"",group:"主料"}], steps:[""], tips:"", source:"手写", baseServings:2} : JSON.parse(JSON.stringify(byId(id)));
+  if(!r) return;
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <button data-act="close-sheet">取消</button>
+      <span>${isNew ? "新增菜谱" : "编辑菜谱"}</span>
+      <button data-act="save-recipe" data-id="${esc(r.id)}" data-new="${isNew ? 1 : 0}">保存</button>
+    </div>
+    <div class="sheet-body" id="editorBody" data-id="${esc(r.id)}" data-new="${isNew ? 1 : 0}">
+      <div class="field"><label>菜名</label><input id="e-name" value="${esc(r.name)}" placeholder="比如：番茄牛腩"></div>
+      <div class="grid2">
+        <div class="field"><label>分类</label><select id="e-cat">${CATS.map(c => `<option value="${c.key}" ${r.category===c.key?"selected":""}>${c.emoji} ${c.name}</option>`).join("")}</select></div>
+        <div class="field"><label>类型</label><select id="e-kind">${[["荤","荤菜"],["素","素菜"],["汤","汤水"],["蛋","蛋类"],["豆","豆制品"]].map(k => `<option value="${k[0]}" ${r.kind===k[0]?"selected":""}>${k[1]}</option>`).join("")}</select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>耗时（分钟）</label><input id="e-min" type="number" min="5" max="240" value="${r.minutes}"></div>
+        <div class="field"><label>基准份量（人）</label><input id="e-base" type="number" min="1" max="8" value="${r.baseServings || 2}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>难度</label><select id="e-diff">${[[1,"简单"],[2,"中等"],[3,"有点讲究"]].map(d => `<option value="${d[0]}" ${r.difficulty===d[0]?"selected":""}>${d[1]}</option>`).join("")}</select></div>
+        <div class="field"><label>辣度</label><select id="e-spicy">${[0,1,2,3].map(v => `<option value="${v}" ${r.spicy===v?"selected":""}>${spicyText(v)}</option>`).join("")}</select></div>
+      </div>
+      <div class="field"><label>标签（用顿号分隔）</label><input id="e-tags" value="${esc((r.tags||[]).join("、"))}" placeholder="下饭、快手"></div>
+
+      <div class="field"><label>配料</label><div id="e-ings"></div>
+        <div style="display:flex;gap:8px"><button class="btn small" data-act="add-ing">＋主料</button><button class="btn small" data-act="add-ing" data-group="调料">＋调料</button></div>
+      </div>
+
+      <div class="field"><label>做法（一步一行）</label><div id="e-steps"></div>
+        <button class="btn small" data-act="add-step">＋ 加一步</button>
+      </div>
+
+      <div class="field"><label>关键窍门</label><textarea id="e-tips">${esc(r.tips || "")}</textarea></div>
+    </div>
+    <div class="bottom-bar"><button class="btn primary" data-act="save-recipe" data-id="${esc(r.id)}" data-new="${isNew ? 1 : 0}">保存这道菜</button></div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+  // 用内存草稿承接编辑，避免每次输入都写库
+  window.__draft = r;
+  renderIngEditor();
+  renderStepEditor();
+  wireEditor();
+}
+function wireEditor(){
+  document.querySelectorAll("[data-ing]").forEach(el => {
+    if(el.dataset.bound) return;
+    el.dataset.bound = "1";
+    const sync = () => {
+      const idx = parseInt(el.dataset.idx, 10);
+      if(window.__draft && window.__draft.ingredients[idx]) window.__draft.ingredients[idx][el.dataset.ing] = el.value;
+    };
+    el.addEventListener("input", sync);
+    el.addEventListener("change", sync);
+  });
+  document.querySelectorAll("[data-step]").forEach(el => {
+    if(el.dataset.bound) return;
+    el.dataset.bound = "1";
+    el.addEventListener("input", () => {
+      const idx = parseInt(el.dataset.step, 10);
+      if(window.__draft && window.__draft.steps[idx] !== undefined) window.__draft.steps[idx] = el.value;
+    });
+  });
+}
+function renderIngEditor(){
+  const d = window.__draft;
+  const box = document.getElementById("e-ings");
+  if(!box) return;
+  box.innerHTML = d.ingredients.map((i, idx) => `<div class="ing-edit">
+    <input value="${esc(i.name)}" placeholder="食材" data-ing="name" data-idx="${idx}">
+    <input class="amt" value="${esc(i.amount)}" placeholder="用量" data-ing="amount" data-idx="${idx}">
+    <select data-ing="group" data-idx="${idx}">
+      <option value="主料" ${i.group==="主料"?"selected":""}>主</option>
+      <option value="调料" ${i.group==="调料"?"selected":""}>调</option>
+    </select>
+    <button class="btn small" data-act="del-ing" data-idx="${idx}" style="padding:0 8px">✕</button>
+  </div>`).join("");
+}
+function renderStepEditor(){
+  const d = window.__draft;
+  const box = document.getElementById("e-steps");
+  if(!box) return;
+  box.innerHTML = d.steps.map((s, idx) => `<div class="ing-edit">
+    <div style="flex:0 0 18px;color:var(--accent);font-weight:800;padding-top:10px">${idx+1}</div>
+    <textarea data-step="${idx}" style="flex:1;min-height:52px;border:0;border-radius:10px;background:var(--fill);padding:9px 10px;font-size:14px;line-height:1.45;resize:vertical">${esc(s)}</textarea>
+    <button class="btn small" data-act="del-step" data-idx="${idx}" style="padding:0 8px">✕</button>
+  </div>`).join("");
+}
+function saveRecipe(id, isNew){
+  const d = window.__draft;
+  if(!d) return;
+  const name = (document.getElementById("e-name").value || "").trim();
+  if(!name){ toast("先给这道菜起个名字"); return; }
+  d.name = name;
+  d.category = document.getElementById("e-cat").value;
+  d.kind = document.getElementById("e-kind").value;
+  d.minutes = Math.max(5, Math.min(240, parseInt(document.getElementById("e-min").value, 10) || 20));
+  d.baseServings = Math.max(1, Math.min(8, parseInt(document.getElementById("e-base").value, 10) || 2));
+  d.difficulty = parseInt(document.getElementById("e-diff").value, 10) || 1;
+  d.spicy = parseInt(document.getElementById("e-spicy").value, 10) || 0;
+  d.tags = (document.getElementById("e-tags").value || "").split(/[、,，\s]+/).filter(Boolean).slice(0,6);
+  d.tips = (document.getElementById("e-tips").value || "").trim();
+  d.ingredients = d.ingredients.filter(i => i.name.trim());
+  d.steps = d.steps.map(s => s.trim()).filter(Boolean);
+  if(!d.ingredients.length || !d.steps.length){ toast("配料和做法至少各留一条"); return; }
+  d.source = isNew ? "手写" : (d.source || "内置菜谱");
+  const idx = S.recipes.findIndex(x => x.id === d.id);
+  if(idx >= 0) S.recipes[idx] = d; else S.recipes.unshift(d);
+  save();
+  window.__draft = null;
+  closeSheet();
+  toast("已保存");
+}
+
+/* ---------- 烹饪模式 ---------- */
+function openCook(id){
+  const r = byId(id);
+  if(!r) return;
+  ui.cooking = {id, index:0, remaining:0, total:0, timer:null};
+  renderCook();
+}
+function renderCook(){
+  const c = ui.cooking;
+  const r = byId(c.id);
+  if(!r) return;
+  const step = r.steps[c.index] || "";
+  const minutes = detectMinutes(step);
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="cook">
+    <div class="cook-head">
+      <button data-act="close-cook" style="color:var(--accent)">退出</button>
+      <span>${esc(r.name)}</span>
+      <span>第 ${c.index+1} / ${r.steps.length} 步</span>
+    </div>
+    <div class="cook-step">${esc(step)}</div>
+    ${minutes ? `<div>
+      ${c.remaining > 0 ? `<div class="timer">
+          <div class="clock" id="clock">${fmtClock(c.remaining)}</div>
+          <div class="bar"><i id="timerBar" style="width:${(c.remaining/c.total*100).toFixed(1)}%"></i></div>
+          <button class="btn small" data-act="cancel-timer">取消</button>
+        </div>` :
+        `<button class="btn wide" style="width:100%;margin:0 0 12px" data-act="start-timer" data-min="${minutes}">计时 ${minutes} 分钟</button>`}
+    </div>` : ""}
+    <div class="cook-foot">
+      <button class="btn" data-act="cook-prev" ${c.index === 0 ? "disabled" : ""}>上一步</button>
+      <button class="btn primary" data-act="cook-next">${c.index === r.steps.length-1 ? "做完了" : "下一步"}</button>
+    </div>
+  </div>`;
+}
+function detectMinutes(text){
+  const m = String(text || "").match(/(\d+)\s*分钟/);
+  if(!m) return 0;
+  const v = parseInt(m[1], 10);
+  return v > 0 && v <= 180 ? v : 0;
+}
+function fmtClock(sec){ return pad(Math.floor(sec/60)) + ":" + pad(sec % 60); }
+function startTimer(minutes){
+  const c = ui.cooking;
+  if(!c) return;
+  stopTimer();
+  c.total = minutes * 60;
+  c.remaining = c.total;
+  renderCook();
+  c.timer = setInterval(() => {
+    c.remaining--;
+    const clock = document.getElementById("clock");
+    const bar = document.getElementById("timerBar");
+    if(clock) clock.textContent = fmtClock(Math.max(0, c.remaining));
+    if(bar) bar.style.width = Math.max(0, c.remaining / c.total * 100).toFixed(1) + "%";
+    if(c.remaining <= 0){
+      stopTimer();
+      buzz([80,60,80]);
+      toast("时间到了");
+      renderCook();
+    }
+  }, 1000);
+}
+function stopTimer(){
+  if(ui.cooking && ui.cooking.timer){ clearInterval(ui.cooking.timer); ui.cooking.timer = null; }
+  if(ui.cooking) ui.cooking.remaining = 0;
+}
+function closeCook(){
+  stopTimer();
+  ui.cooking = null;
+  document.getElementById("sheet").innerHTML = "";
+  document.body.style.overflow = "";
+  render();
+}
+
+/* ---------- 选菜弹窗 ---------- */
+function openPicker(onPick, title){
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <button data-act="close-sheet">取消</button>
+      <span>${esc(title || "选一道菜")}</span>
+      <span style="width:44px"></span>
+    </div>
+    <div class="sheet-body">
+      <input class="search" id="pk-q" placeholder="搜菜名或食材">
+      <div class="chips" style="padding:10px 0">
+        <button class="chip on" data-act="pk-cat" data-cat="">全部</button>
+        ${CATS.map(c => `<button class="chip" data-act="pk-cat" data-cat="${c.key}">${c.emoji} ${c.name}</button>`).join("")}
+      </div>
+      <div class="list" id="pk-list" style="margin:0"></div>
+    </div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+  window.__onPick = onPick;
+  window.__pkCat = "";
+  renderPickerList();
+}
+function renderPickerList(){
+  const q = (document.getElementById("pk-q") || {}).value || "";
+  const cat = window.__pkCat || "";
+  const list = S.recipes.filter(r => (!cat || r.category === cat) && matchesKeyword(r, q)).slice(0, 80);
+  const box = document.getElementById("pk-list");
+  if(!box) return;
+  box.innerHTML = list.length ? list.map(r => `<div class="item" data-act="pk-pick" data-id="${esc(r.id)}">
+    <div class="emoji">${catOf(r.category).emoji}</div>
+    <div class="main"><div class="name">${esc(r.name)}</div><div class="meta">${r.minutes} 分钟 · ${diffText(r.difficulty)}</div></div>
+    <div class="chev">›</div>
+  </div>`).join("") : `<div class="empty">没找到</div>`;
+}
+function pickRecipe(id){
+  const fn = window.__onPick;
+  const r = byId(id);
+  if(!fn || !r) return;
+  window.__onPick = null;
+  fn(r);
+  closeSheet();
+}
+
+/* ---------- 三选一 ---------- */
+function openTriple(){
+  const poolList = pool().slice().sort(() => Math.random() - .5).slice(0,3);
+  ui.triple = poolList.map(r => r.id);
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <button data-act="close-sheet">关闭</button>
+      <span>三选一</span>
+      <button data-act="triple-again">换一批</button>
+    </div>
+    <div class="sheet-body">
+      ${poolList.length ? poolList.map(r => `<div class="card" style="margin:0 0 12px">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="font-size:22px">${catOf(r.category).emoji}</span>
+          <b style="font-size:20px">${esc(r.name)}</b>
+        </div>
+        <div class="detail-sub" style="text-align:left;margin:6px 0 10px">${r.minutes} 分钟 · ${diffText(r.difficulty)} · ${spicyText(r.spicy)}</div>
+        <div class="hint" style="padding:0 0 10px">${esc((r.ingredients||[]).filter(i => i.group === "主料").slice(0,5).map(i => i.name).join("、"))}</div>
+        <button class="btn primary" style="width:100%" data-act="triple-pick" data-id="${esc(r.id)}">就吃这个</button>
+      </div>`).join("") : `<div class="empty">没有符合条件的菜</div>`}
+    </div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+}
+
+/* ---------- 绑定 ---------- */
+function wire(){
+  const q = document.getElementById("q");
+  if(q){
+    q.addEventListener("input", e => {
+      ui.query = e.target.value;
+      const pos = e.target.selectionStart;
+      render();
+      const next = document.getElementById("q");
+      if(next){ next.focus(); next.setSelectionRange(pos, pos); }
+    });
+  }
+  const inv = document.getElementById("inv");
+  if(inv) inv.addEventListener("keydown", e => { if(e.key === "Enter") addInv(inv.value); });
+  const dis = document.getElementById("dislike");
+  if(dis) dis.addEventListener("keydown", e => { if(e.key === "Enter") addDislike(dis.value); });
+
+  document.querySelectorAll("[data-set]").forEach(el => {
+    el.addEventListener("change", () => {
+      const key = el.dataset.set;
+      let value = el.value;
+      if(["maxMinutes","maxSpicy","avoidDays","servings"].includes(key)) value = parseInt(value, 10) || 0;
+      S.settings[key] = value;
+      save();
+      render();
+    });
+  });
+
+  const body = document.getElementById("editorBody");
+  if(body){
+    document.querySelectorAll("[data-ing]").forEach(el => {
+      el.addEventListener("input", () => {
+        const idx = parseInt(el.dataset.idx, 10);
+        const field = el.dataset.ing;
+        if(window.__draft && window.__draft.ingredients[idx]) window.__draft.ingredients[idx][field] = el.value;
+      });
+      el.addEventListener("change", () => {
+        const idx = parseInt(el.dataset.idx, 10);
+        const field = el.dataset.ing;
+        if(window.__draft && window.__draft.ingredients[idx]) window.__draft.ingredients[idx][field] = el.value;
+      });
+    });
+    document.querySelectorAll("[data-step]").forEach(el => {
+      el.addEventListener("input", () => {
+        const idx = parseInt(el.dataset.step, 10);
+        if(window.__draft && window.__draft.steps[idx] !== undefined) window.__draft.steps[idx] = el.value;
+      });
+    });
+  }
+  const pkq = document.getElementById("pk-q");
+  if(pkq) pkq.addEventListener("input", renderPickerList);
+}
+
+/* ---------- 交互 ---------- */
+function addInv(word){
+  const el = document.getElementById("inv");
+  const text = (word !== undefined ? word : (el ? el.value : "")) || "";
+  const w = text.trim();
+  if(!w) return;
+  if(!S.inventory.includes(w)) S.inventory.push(w);
+  if(el) el.value = "";
+  save(); render();
+}
+function addDislike(word){
+  const el = document.getElementById("dislike");
+  const w = ((word !== undefined ? word : (el ? el.value : "")) || "").trim();
+  if(!w) return;
+  if(!S.settings.dislikes.includes(w)) S.settings.dislikes.push(w);
+  if(el) el.value = "";
+  save(); render();
+}
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  const act = el.dataset.act;
+  const id = el.dataset.id;
+
+  switch(act){
+    case "tab":
+      S.tab = el.dataset.tab; save(); render(); window.scrollTo({top:0}); break;
+    case "roll": rollDice(); break;
+    case "decide": decide(); break;
+    case "triple": openTriple(); break;
+    case "triple-again": openTriple(); break;
+    case "triple-pick":
+      ui.pick = id;
+      S.records.unshift({id:uid(), recipeID:id, recipeName:(byId(id)||{}).name || "", date:new Date().toISOString(), rating:0, note:""});
+      save(); closeSheet(); openDetail(id); break;
+    case "fill-plan":
+      fillPlan(); break;
+    case "goto-history": S.tab = "me"; save(); render(); break;
+    case "new-recipe": openEditor(null); break;
+    case "detail": openDetail(id); break;
+    case "close-sheet": closeSheet(); break;
+    case "fav": {
+      const i = S.favorites.indexOf(id);
+      if(i >= 0) S.favorites.splice(i,1); else S.favorites.push(id);
+      save();
+      if(document.getElementById("sheet").innerHTML.includes("detail-name")) openDetail(id);
+      else render();
+      break;
+    }
+    case "add-shop": {
+      const r = byId(id);
+      if(r){ addRecipeToShopping(r); toast("配料已加入清单"); }
+      break;
+    }
+    case "check-shop": {
+      const item = S.shopping.find(x => x.id === id);
+      if(item){ item.done = !item.done; save(); render(); }
+      break;
+    }
+    case "clear-done":
+      S.shopping = S.shopping.filter(i => !i.done); save(); render(); break;
+    case "add-shopping": openPicker(r => { addRecipeToShopping(r); toast("已加入清单"); }, "按菜谱加配料"); break;
+    case "check-ing": {
+      const key = el.dataset.key;
+      if(!key) break;
+      ui.checked[key] = !ui.checked[key];
+      el.classList.toggle("done", !!ui.checked[key]);
+      break;
+    }
+    case "serv": {
+      const next = Math.max(1, Math.min(8, ui.servings + parseInt(el.dataset.v, 10)));
+      ui.servings = next;
+      const label = document.getElementById("servVal");
+      if(label) label.textContent = next + " 人";
+      const recipe = byId(ui.detailId);
+      if(recipe){
+        (recipe.ingredients || []).forEach((i, idx) => {
+          const cell = document.querySelector('[data-amt="' + idx + '"]');
+          if(cell) cell.textContent = scaleAmount(recipe, i.amount, next);
+        });
+      }
+      break;
+    }
+    case "start-cook": openCook(id); break;
+    case "close-cook": closeCook(); break;
+    case "cook-prev":
+      if(ui.cooking && ui.cooking.index > 0){ stopTimer(); ui.cooking.index--; renderCook(); }
+      break;
+    case "cook-next": {
+      const c = ui.cooking; if(!c) break;
+      const r = byId(c.id);
+      if(!r) break;
+      if(c.index < r.steps.length - 1){ stopTimer(); c.index++; renderCook(); }
+      else { closeCook(); toast("辛苦了，吃好"); }
+      break;
+    }
+    case "start-timer": startTimer(parseInt(el.dataset.min, 10) || 1); break;
+    case "cancel-timer": stopTimer(); renderCook(); break;
+    case "detail-menu": openDetailMenu(id); break;
+    case "edit-recipe": openEditor(id); break;
+    case "save-recipe": saveRecipe(id, el.dataset.new === "1"); break;
+    case "del-recipe": {
+      if(confirm("删除这道菜？内置菜可以用「恢复内置菜谱」找回，自己写的找不回来。")){
+        S.recipes = S.recipes.filter(r => r.id !== id);
+        S.favorites = S.favorites.filter(x => x !== id);
+        S.plan = S.plan.filter(p => p.recipeID !== id);
+        save(); closeSheet();
+      }
+      break;
+    }
+    case "add-ing": {
+      if(!window.__draft) break;
+      window.__draft.ingredients.push({name:"", amount:"", group: el.dataset.group || "主料"});
+      renderIngEditor(); wireEditor();
+      break;
+    }
+    case "del-ing": {
+      if(!window.__draft) break;
+      window.__draft.ingredients.splice(parseInt(el.dataset.idx,10), 1);
+      renderIngEditor(); wireEditor();
+      break;
+    }
+    case "add-step": {
+      if(!window.__draft) break;
+      window.__draft.steps.push("");
+      renderStepEditor(); wireEditor();
+      break;
+    }
+    case "del-step": {
+      if(!window.__draft) break;
+      window.__draft.steps.splice(parseInt(el.dataset.idx,10), 1);
+      renderStepEditor(); wireEditor();
+      break;
+    }
+    case "cook-again": ui.pick = id; decide(); break;
+    case "cat": ui.cat = el.dataset.cat; render(); break;
+    case "toggle-fav-filter":
+      S.settings.onlyFavorites = !S.settings.onlyFavorites; save(); render(); break;
+    case "toggle": {
+      const key = el.dataset.key;
+      S.settings[key] = !S.settings[key]; save(); render(); break;
+    }
+    case "add-inv": addInv(); break;
+    case "quick-inv": addInv(el.dataset.word); break;
+    case "del-inv": {
+      const w = el.dataset.word;
+      S.inventory = S.inventory.filter(x => x !== w); save(); render(); break;
+    }
+    case "toggle-matches": ui.showAllMatches = !ui.showAllMatches; render(); break;
+    case "list-tab": ui.listTab = parseInt(el.dataset.v, 10); render(); break;
+    case "plan-slot": {
+      const day = el.dataset.day, slot = el.dataset.slot;
+      openPicker(r => {
+        S.plan = S.plan.filter(p => !(p.day === day && p.slot === slot));
+        S.plan.push({id:uid(), day, slot, recipeID:r.id, recipeName:r.name});
+        save(); render();
+      }, "排在 " + day + " " + slot);
+      break;
+    }
+    case "add-dislike": addDislike(); break;
+    case "del-dislike":
+      S.settings.dislikes = S.settings.dislikes.filter(w => w !== el.dataset.word);
+      save(); render(); break;
+    case "export": exportData(); break;
+    case "import": importData(); break;
+    case "restore":
+      if(confirm("内置菜会回到最初内容，你对它们的修改会被覆盖；自己写的菜保留。")){
+        const custom = S.recipes.filter(r => r.source !== "内置菜谱");
+        S.recipes = SEED.dishes.map(d => Object.assign({}, d)).concat(custom);
+        save(); render(); toast("已恢复内置菜谱");
+      }
+      break;
+    case "clear-records":
+      if(confirm("清空所有做饭记录？")){ S.records = []; save(); render(); }
+      break;
+    case "pk-pick": pickRecipe(id); break;
+    case "pk-cat":
+      window.__pkCat = el.dataset.cat;
+      document.querySelectorAll("[data-act=pk-cat]").forEach(c => c.classList.toggle("on", c === el));
+      renderPickerList();
+      break;
+  }
+});
+
+function openDetailMenu(id){
+  const r = byId(id);
+  if(!r) return;
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head"><button data-act="close-sheet">取消</button><span>这道菜</span><span style="width:44px"></span></div>
+    <div class="sheet-body">
+      <div class="list" style="margin:0">
+        <div class="item" data-act="edit-recipe" data-id="${esc(id)}"><div class="main"><div class="name">编辑</div></div><div class="chev">›</div></div>
+        <div class="item" data-act="add-shopping-for" data-id="${esc(id)}"><div class="main"><div class="name">配料加入清单</div></div><div class="chev">›</div></div>
+        <div class="item" data-act="plan-for" data-id="${esc(id)}"><div class="main"><div class="name">排进这周菜单</div></div><div class="chev">›</div></div>
+        <div class="item" data-act="share-recipe" data-id="${esc(id)}"><div class="main"><div class="name">复制文字版</div></div><div class="chev">›</div></div>
+        <div class="item" data-act="del-recipe" data-id="${esc(id)}"><div class="main"><div class="name" style="color:#ff3b30">删除</div></div><div class="chev">›</div></div>
+      </div>
+    </div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+}
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  const act = el.dataset.act;
+  const id = el.dataset.id;
+  if(act === "plan-set"){
+    const day = el.dataset.day, slot = el.dataset.slot, rid = el.dataset.id;
+    const r = byId(rid);
+    if(r){
+      S.plan = S.plan.filter(p => !(p.day === day && p.slot === slot));
+      S.plan.push({id:uid(), day, slot, recipeID:r.id, recipeName:r.name});
+      save(); closeSheet(); toast("已排进菜单");
+    }
+  } else if(act === "add-shopping-for"){
+    const r = byId(id); if(r){ addRecipeToShopping(r); toast("已加入清单"); }
+  } else if(act === "plan-for"){
+    openPlanSlotPicker(id);
+  } else if(act === "share-recipe"){
+    const r = byId(id);
+    if(r) copyText(r);
+  }
+});
+
+function openPlanSlotPicker(id){
+  const r = byId(id);
+  if(!r) return;
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head"><button data-act="close-sheet">取消</button><span>排到哪一顿</span><span style="width:44px"></span></div>
+    <div class="sheet-body">
+      ${daysFromToday(7).map(d => `<div class="section-title" style="padding-left:0">${md(d)} ${WEEK[d.getDay()]}</div>
+        <div class="list" style="margin:0 0 10px">
+          ${["午","晚"].map(slot => {
+            const e = planEntry(d, slot);
+            return `<div class="item" data-act="plan-set" data-day="${dayKey(d)}" data-slot="${slot}" data-id="${esc(id)}">
+              <div class="emoji" style="font-size:14px;color:var(--sub)">${slot}</div>
+              <div class="main"><div class="name" style="color:${e ? "var(--text)" : "var(--sub)"}">${esc(e ? e.recipeName : "空着")}</div></div>
+              <div class="chev">＋</div>
+            </div>`;
+          }).join("")}
+        </div>`).join("")}
+    </div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+}
+
+function addRecipeToShopping(r){
+  const people = S.settings.servings;
+  (r.ingredients || []).forEach(i => {
+    const amount = scaleAmount(r, i.amount, people);
+    const exist = S.shopping.find(x => x.name === i.name && !x.done);
+    if(exist){ exist.amount = exist.amount === amount ? amount : exist.amount + " + " + amount; exist.fromRecipe = (exist.fromRecipe ? exist.fromRecipe + "、" : "") + r.name; }
+    else S.shopping.push({id:uid(), name:i.name, amount, done:false, fromRecipe:r.name});
+  });
+  save();
+  if(S.tab === "list") render();
+}
+
+function fillPlan(){
+  let used = new Set(S.plan.map(p => p.recipeID));
+  let candidates = S.recipes.filter(r => !used.has(r.id));
+  daysFromToday(7).forEach(d => {
+    if(planEntry(d, "晚")) return;
+    if(!candidates.length) candidates = S.recipes.slice();
+    const r = candidates[Math.floor(Math.random()*candidates.length)];
+    S.plan.push({id:uid(), day:dayKey(d), slot:"晚", recipeID:r.id, recipeName:r.name});
+    candidates = candidates.filter(x => x.id !== r.id);
+  });
+  save(); render(); toast("这周晚餐排好了");
+}
+
+function copyText(r){
+  const people = S.settings.servings;
+  const lines = ["【" + r.name + "】" + r.minutes + " 分钟 · " + diffText(r.difficulty), "", "配料（" + people + " 人份）："];
+  (r.ingredients || []).forEach(i => lines.push("· " + i.name + " " + scaleAmount(r, i.amount, people)));
+  lines.push("", "做法：");
+  r.steps.forEach((s, i) => lines.push((i+1) + ". " + s));
+  if(r.tips) lines.push("", "窍门：" + r.tips);
+  lines.push("", "—— 来自《今晚吃什么》");
+  const text = lines.join("\n");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(() => toast("已复制，去粘贴吧"), () => fallbackCopy(text));
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); toast("已复制"); }catch(e){ toast("复制失败"); }
+  document.body.removeChild(ta);
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "今晚吃什么-" + todayKey() + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("备份已下载");
+}
+function importData(){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data.recipes)) throw new Error("bad");
+        S = Object.assign(defaultState(), data);
+        S.settings = Object.assign(defaultState().settings, data.settings || {});
+        save(); render(); toast("导入成功");
+      }catch(e){ toast("这个文件读不出来"); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+/* ---------- 启动 ---------- */
+window.addEventListener("beforeunload", () => {
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+});
+window.addEventListener("scroll", () => {
+  const bar = document.getElementById("topbar");
+  bar.classList.toggle("scrolled", window.scrollY > 4);
+}, {passive:true});
+render();
+</script>
+</body>
+</html>

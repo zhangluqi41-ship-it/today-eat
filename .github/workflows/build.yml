@@ -1,0 +1,98 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 40
+
+    steps:
+      - name: 取出代码
+        uses: actions/checkout@v4
+
+      - name: 校验菜谱数据（重新编译后必须与仓库一致）
+        run: |
+          python3 Scripts/build_seed.py
+          git diff --exit-code -- Sources/Resources/SeedRecipes.json
+
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Xcode 工程
+        run: xcodegen generate
+
+      - name: 编译（无签名）
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project TodayEat.xcodeproj \
+            -scheme TodayEat \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION="1.0.${{ github.run_number }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            clean build
+
+      - name: 打出两个装机版本
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/TodayEat.app"
+          test -d "$APP"
+          mkdir -p out
+
+          make_ipa() {
+            bundle_id="$1"
+            name="$2"
+            rm -rf Payload
+            mkdir -p Payload
+            cp -R "$APP" "Payload/TodayEat.app"
+            /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${bundle_id}" "Payload/TodayEat.app/Info.plist"
+            echo "--- ${name} ---"
+            /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "Payload/TodayEat.app/Info.plist"
+            /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "Payload/TodayEat.app/Info.plist"
+            rm -f "out/${name}.ipa"
+            zip -qry "out/${name}.ipa" Payload
+            rm -rf Payload
+          }
+
+          make_ipa "com.siye.todayeat" "TodayEat-aisi"
+          make_ipa "com.siye.today-eat" "TodayEat-sidestore"
+          ls -lh out
+          shasum -a 256 out/*.ipa
+
+      - name: 上传安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: TodayEat-ipa
+          path: out/*.ipa
+          if-no-files-found: error
+
+      - name: 发布 Release（手机点链接就能下载）
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: 今晚吃什么 v1.0.${{ github.run_number }}
+          body: |
+            安装包已就绪。
+
+            - **SideStore 用**：`TodayEat-sidestore.ipa`
+            - 爱思助手用：`TodayEat-aisi.ipa`
+
+            版本号 1.0.${{ github.run_number }}（这个数字只增不减，方便确认装的是不是新包）
+
+            装机前核对：SideStore 里显示的 bundle id 应该是 `com.siye.today-eat`。
+            升级请用同一个包覆盖安装，不要卸载重装。
+          files: out/*.ipa
+          draft: false
+          prerelease: false
