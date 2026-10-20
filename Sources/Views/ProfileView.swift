@@ -170,7 +170,7 @@ struct HistoryView: View {
             }
 
             ForEach(groups) { group in
-                Section(dayTitle(group.key)) {
+                Section {
                     ForEach(group.records) { record in
                         HStack {
                             NavigationLink {
@@ -228,6 +228,8 @@ struct HistoryView: View {
                             }
                         }
                     }
+                } header: {
+                    Text(dayTitle(group.key))
                 }
             }
         }
@@ -254,7 +256,7 @@ struct PlanSlotPicker: View {
         NavigationStack {
             List {
                 ForEach(DayFormat.daysFromToday(7), id: \.self) { day in
-                    Section(DayFormat.monthDay.string(from: day) + " " + DayFormat.weekday.string(from: day)) {
+                    Section {
                         ForEach(["午", "晚"], id: \.self) { slot in
                             let entry = store.planEntry(day: day, slot: slot)
                             HStack {
@@ -273,6 +275,8 @@ struct PlanSlotPicker: View {
                                 dismiss()
                             }
                         }
+                    } header: {
+                        Text(DayFormat.monthDay.string(from: day) + " " + DayFormat.weekday.string(from: day))
                     }
                 }
             }

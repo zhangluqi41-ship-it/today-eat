@@ -30,8 +30,8 @@ struct RecipeDetailView: View {
         .navigationTitle(store.recipe(id: recipeID)?.name ?? "菜谱")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if let recipe = store.recipe(id: recipeID) {
-                ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let recipe = store.recipe(id: recipeID) {
                     Menu {
                         Button {
                             showEditor = true

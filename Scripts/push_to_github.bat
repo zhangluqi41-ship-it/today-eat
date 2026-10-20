@@ -26,8 +26,9 @@ if errorlevel 1 goto failed
 "%GIT%" -c user.name="TodayEat" -c user.email="todayeat@local" commit -m "Today Eat: 213 recipes + SwiftUI app"
 if errorlevel 1 echo Nothing new to commit, continue.
 
+start "" "https://github.com/new"
 echo.
-echo Step 1: create a PUBLIC repo on github.com, name it today-eat
+echo Step 1: create a PUBLIC repo named today-eat, do NOT tick any Initialize box
 echo Step 2: copy its URL, like https://github.com/yourname/today-eat.git
 echo.
 set "REPO="

@@ -176,6 +176,11 @@ struct TonightView: View {
                 NavigationStack {
                     RecipeDetailView(recipeID: recipe.id)
                         .environment(store)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("关闭") { detailRecipe = nil }
+                            }
+                        }
                 }
             }
             .sensoryFeedback(.success, trigger: feedbackTrigger)
