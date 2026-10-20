@@ -156,6 +156,7 @@ def main() -> int:
     OUTPUT.write_text(
         json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
     print("分类统计：")
