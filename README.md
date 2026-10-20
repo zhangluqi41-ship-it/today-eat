@@ -65,13 +65,15 @@
 
 你需要：一个 GitHub 账号（公开仓库免费）、一台能上网的电脑。**不需要 Mac。**
 
-1. 在 GitHub 新建一个**公开**仓库，把本目录所有文件推上去（`.github/` 别漏）
-2. 推到 `main` 分支后，Actions 里会自动跑 `Build iOS IPA`
-3. 跑完在 Actions → 这次运行 → Artifacts 下载 `TodayEat-ipa`
-4. 解压得到两个包：
+1. 在 GitHub 新建一个**公开**仓库，名字随意（比如 `today-eat`），**不要**勾选任何 Initialize 选项
+2. 双击 `Scripts/push_to_github.bat`，按提示粘贴仓库地址；浏览器里登录一次 GitHub
+3. Actions 里会自动跑 `Build iOS IPA`（约 8–10 分钟）
+4. 跑完到仓库的 **Releases** 页，两个包都挂在那里，手机上点链接就能下载：
+   - `TodayEat-sidestore.ipa` → 给 **SideStore**（bundle id `com.siye.today-eat`）
    - `TodayEat-aisi.ipa` → 给**爱思助手**（bundle id 无后缀 `com.siye.todayeat`）
-   - `TodayEat-sidestore.ipa` → 给 **SideStore**（bundle id 连字符 `com.siye.today-eat`）
-5. 装机，打开
+5. SideStore 里点 ＋ 选这个 ipa 安装
+
+详细步骤、报错排查见 **`装机指引.md`**。
 
 ### 三条必须记住的规则
 
