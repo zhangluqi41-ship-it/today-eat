@@ -32,6 +32,26 @@ final class RecipeStore {
 
     static var dataURL: URL { folderURL.appendingPathComponent("data.json") }
 
+    static var backupURL: URL { folderURL.appendingPathComponent("data.corrupt.json") }
+
+    /// 写盘用 .iso8601，读盘必须也用同一套规则，否则第二次启动就会把好文件判成损坏。
+    static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            if let text = try? container.decode(String.self) {
+                if let date = DayFormat.iso.date(from: text) ?? DayFormat.isoFractional.date(from: text) {
+                    return date
+                }
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "看不懂的日期：\(text)")
+            }
+            // 兼容更早版本用默认策略写下的时间戳
+            let value = try container.decode(Double.self)
+            return Date(timeIntervalSinceReferenceDate: value)
+        }
+        return decoder
+    }
+
     // MARK: 生命周期
 
     init() {
@@ -51,15 +71,23 @@ final class RecipeStore {
 
         do {
             let raw = try Data(contentsOf: url)
-            let data = try JSONDecoder().decode(AppData.self, from: raw)
+            let data = try Self.makeDecoder().decode(AppData.self, from: raw)
             apply(data)
             loadSucceeded = true
             loadMessage = nil
         } catch let error as DecodingError {
+            // 先试着从上次留下的备份里恢复，能救回来就不要覆盖用户的数据。
+            if let restored = recoverFromBackup() {
+                apply(restored)
+                loadSucceeded = true
+                loadMessage = "上次读取失败，已从 data.corrupt.json 恢复。建议在设置里导出一份备份。"
+                persist()
+                _ = error
+                return
+            }
             // 真的解不出来才算损坏：改名留档，再用内置菜谱起一份新的，避免白屏。
-            let backup = url.deletingPathExtension().appendingPathExtension("corrupt.json")
-            try? fileManager.removeItem(at: backup)
-            try? fileManager.moveItem(at: url, to: backup)
+            try? fileManager.removeItem(at: Self.backupURL)
+            try? fileManager.moveItem(at: url, to: Self.backupURL)
             seedFromBundle()
             loadMessage = "数据文件格式异常，已备份为 data.corrupt.json 并载入内置菜谱。"
             _ = error
@@ -67,6 +95,11 @@ final class RecipeStore {
             // 权限被拒 / IO 失败：绝不能当成损坏，也不许覆盖写。
             loadMessage = "读取本地数据失败：\(error.localizedDescription)。稍后会自动重试。"
         }
+    }
+
+    private func recoverFromBackup() -> AppData? {
+        guard let raw = try? Data(contentsOf: Self.backupURL) else { return nil }
+        return try? Self.makeDecoder().decode(AppData.self, from: raw)
     }
 
     /// 挂在首屏 onAppear 和回到前台时，专门补上“上次没读成功”的情况。
@@ -478,7 +511,7 @@ final class RecipeStore {
         defer { if needsStop { url.stopAccessingSecurityScopedResource() } }
         do {
             let raw = try Data(contentsOf: url)
-            let data = try JSONDecoder().decode(AppData.self, from: raw)
+            let data = try Self.makeDecoder().decode(AppData.self, from: raw)
             apply(data)
             loadSucceeded = true
             persist()

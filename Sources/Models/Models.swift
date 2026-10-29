@@ -297,6 +297,19 @@ struct SeedCategory: Codable {
 // MARK: - 小工具
 
 enum DayFormat {
+    /// data.json 里的日期是 ISO8601 字符串（写入时用的就是它），解码必须对得上。
+    static let iso: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    static let isoFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
     static let key: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_CN")

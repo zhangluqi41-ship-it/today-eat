@@ -150,6 +150,7 @@ struct TonightView: View {
                 }
                 .padding(16)
             }
+            .contentMargins(.bottom, 28, for: .scrollContent)
             .navigationTitle("今晚吃什么")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
