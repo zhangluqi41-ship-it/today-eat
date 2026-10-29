@@ -9,7 +9,7 @@ struct TodayEatApp: App {
         WindowGroup {
             RootView()
                 .environment(store)
-                .tint(.orange)
+                .tint(Color.accentColor)
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
                     case .active:

@@ -236,7 +236,7 @@ final class RecipeStore {
         return recipes.filter { recipe in
             if recipe.minutes > settings.maxMinutes { return false }
             if recipe.spicy > settings.maxSpicy { return false }
-            if !settings.kindFilter.isEmpty, recipe.kind != settings.kindFilter { return false }
+            if !settings.categoryFilter.isEmpty, recipe.category != settings.categoryFilter { return false }
             if settings.onlyFavorites, !favorites.contains(recipe.id) { return false }
             if settings.avoidRecent, avoided.contains(recipe.id) { return false }
             if settings.dislikes.contains(where: { dislike in
@@ -294,6 +294,43 @@ final class RecipeStore {
 
     func removeInventory(_ name: String) {
         inventory.removeAll { $0 == name }
+        persist()
+    }
+
+    func clearInventory() {
+        inventory.removeAll()
+        persist()
+    }
+
+    func toggleInventory(_ name: String) {
+        if inventory.contains(name) {
+            removeInventory(name)
+        } else {
+            addInventory(name)
+        }
+    }
+
+    // MARK: 常备食材（厨房顶部那一排，可自己编辑）
+
+    func addQuickIngredient(_ name: String) {
+        let word = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !word.isEmpty, !settings.quickIngredients.contains(word) else { return }
+        settings.quickIngredients.append(word)
+        persist()
+    }
+
+    func removeQuickIngredient(_ name: String) {
+        settings.quickIngredients.removeAll { $0 == name }
+        persist()
+    }
+
+    func resetQuickIngredients() {
+        settings.quickIngredients = AppSettings.defaultQuickIngredients
+        persist()
+    }
+
+    func moveQuickIngredients(from source: IndexSet, to destination: Int) {
+        settings.quickIngredients.move(fromOffsets: source, toOffset: destination)
         persist()
     }
 

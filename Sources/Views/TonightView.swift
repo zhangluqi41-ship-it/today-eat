@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TonightView: View {
     @Environment(RecipeStore.self) private var store
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var rollingName: String?
     @State private var picked: Recipe?
@@ -24,7 +25,7 @@ struct TonightView: View {
 
                     GroupBox {
                         VStack(spacing: 0) {
-                            kindRow
+                            categoryRow
                             Divider().padding(.vertical, 10)
 
                             Stepper(value: $store.settings.maxMinutes, in: 15...180, step: 15) {
@@ -197,7 +198,7 @@ struct TonightView: View {
                     .accessibilityHidden(true)
 
                 Text(displayName)
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .minimumScaleFactor(0.6)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -239,6 +240,13 @@ struct TonightView: View {
                 .padding(.top, 4)
             }
             .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if let picked, !isRolling { detailRecipe = picked }
+            }
+            .accessibilityAction(named: "查看这道菜") {
+                if let picked { detailRecipe = picked }
+            }
         } label: {
             Text("今晚这道").font(.headline)
         }
@@ -249,23 +257,25 @@ struct TonightView: View {
         return picked?.name ?? "还没抽"
     }
 
-    // MARK: 类型菜单
+    // MARK: 分类菜单
 
-    private var kindRow: some View {
+    private var categoryRow: some View {
         @Bindable var store = store
         return HStack {
-            Text("只要")
+            Text("只要这一类")
             Spacer()
             Menu {
-                Button("不限") { store.settings.kindFilter = "" }
-                Button("荤菜") { store.settings.kindFilter = "荤" }
-                Button("素菜") { store.settings.kindFilter = "素" }
-                Button("汤汤水水") { store.settings.kindFilter = "汤" }
-                Button("蛋类") { store.settings.kindFilter = "蛋" }
-                Button("豆制品") { store.settings.kindFilter = "豆" }
+                Button("全部分类") { store.settings.categoryFilter = "" }
+                ForEach(DishCategory.all) { item in
+                    Button("\(item.emoji) \(item.name)") {
+                        store.settings.categoryFilter = item.key
+                    }
+                }
             } label: {
                 HStack(spacing: 4) {
-                    Text(store.settings.kindFilter.isEmpty ? "不限" : kindName(store.settings.kindFilter))
+                    Text(store.settings.categoryFilter.isEmpty
+                         ? "全部分类"
+                         : DishCategory.name(for: store.settings.categoryFilter))
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.caption2)
                 }
@@ -286,10 +296,14 @@ struct TonightView: View {
         picked = nil
 
         Task { @MainActor in
-            // 老虎机效果：快速掠过菜名，最后停在一个结果上。
-            for _ in 0..<16 {
-                rollingName = candidates.randomElement()?.name
-                try? await Task.sleep(for: .milliseconds(70))
+            if !reduceMotion {
+                // 老虎机效果：快速掠过菜名，最后停在一个结果上。
+                for _ in 0..<16 {
+                    rollingName = candidates.randomElement()?.name
+                    try? await Task.sleep(for: .milliseconds(70))
+                }
+            } else {
+                try? await Task.sleep(for: .milliseconds(220))
             }
             let result = candidates.randomElement()
             rollingName = nil
@@ -315,16 +329,6 @@ struct TonightView: View {
         }
     }
 
-    private func kindName(_ kind: String) -> String {
-        switch kind {
-        case "荤": return "荤菜"
-        case "素": return "素菜"
-        case "汤": return "汤汤水水"
-        case "蛋": return "蛋类"
-        case "豆": return "豆制品"
-        default: return kind
-        }
-    }
 }
 
 /// 加载异常时给一条能操作的提示，而不是白屏或全屏转圈。

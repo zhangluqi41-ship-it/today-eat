@@ -1,106 +1,132 @@
-"""画 App 图标：一碗热汤 + 一双筷子，纯代码生成，不依赖外部素材。
+"""画 App 图标：扁平碗形 + 三缕蒸汽，四个配色方案，最后合成一张对比图。
 
-尺寸按 1024 设计，内部 3 倍超采样再缩小，边缘干净。
+运行后会生成：
+  .workbuddy/icon/variants/a.png .. d.png  （1024 单图）
+  .workbuddy/icon/variants/sheet.png       （2x2 对比）
 """
 
+from __future__ import annotations
+
 import math
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
+SIZE = 1024
 S = 3
-W = 1024 * S
+W = SIZE * S
+OUT = Path(__file__).resolve().parent.parent / ".workbuddy" / "icon" / "variants"
 
 
 def lerp(a, b, t):
     return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def steam(draw, x, top, bottom, width, color, direction=1):
-    """一条上扬的 S 形蒸汽。"""
-    points = []
-    steps = 60
-    amp = 11 * S
+def vertical_gradient(top, bottom):
+    image = Image.new("RGB", (W, W), top)
+    draw = ImageDraw.Draw(image)
+    for y in range(W):
+        draw.line([(0, y), (W, y)], fill=lerp(top, bottom, (y / (W - 1)) ** 0.9))
+    return image
+
+
+def steam_stroke(draw, x, top, bottom, base_width, color, lean=1.0):
+    """上细下粗的蒸汽：只有一次柔和摆动，太长太卷会像面条。"""
+    steps = 70
     for i in range(steps + 1):
         t = i / steps
         y = bottom + (top - bottom) * t
-        points.append((x + direction * amp * math.sin(math.pi * 1.7 * t), y))
-    draw.line(points, fill=color, width=width, joint="curve")
+        swing = math.sin(t * math.pi) * 11 * S * lean
+        px = x + swing
+        width = base_width * (1.0 - 0.62 * t)
+        r = max(width / 2, 1.5 * S)
+        draw.ellipse((px - r, y - r, px + r, y + r), fill=color)
 
 
-def main():
-    image = Image.new("RGB", (W, W), (255, 227, 196))
-    draw = ImageDraw.Draw(image)
+def bowl_path(rim_y: int, half_width: int, depth: int):
+    """碗的轮廓：平口 + 两条二次贝塞尔弧，返回点列表。"""
+    cx = W // 2
+    left = cx - half_width
+    right = cx + half_width
+    bottom = rim_y + depth
+    points = []
+    for i in range(41):
+        t = i / 40
+        x = (1 - t) ** 2 * left + 2 * (1 - t) * t * (left + half_width * 0.18) + t ** 2 * cx
+        y = (1 - t) ** 2 * rim_y + 2 * (1 - t) * t * bottom + t ** 2 * bottom
+        points.append((x, y))
+    for i in range(1, 41):
+        t = i / 40
+        x = (1 - t) ** 2 * cx + 2 * (1 - t) * t * (right - half_width * 0.18) + t ** 2 * right
+        y = (1 - t) ** 2 * bottom + 2 * (1 - t) * t * bottom + t ** 2 * rim_y
+        points.append((x, y))
+    return points
 
-    # 背景：上浅下深的暖色渐变
-    top_color = (255, 231, 203)
-    bottom_color = (255, 148, 84)
-    for y in range(W):
-        t = y / (W - 1)
-        draw.line([(0, y), (W, y)], fill=lerp(top_color, bottom_color, t ** 0.85))
 
-    # 中间柔光
-    glow = Image.new("L", (W, W), 0)
-    glow_draw = ImageDraw.Draw(glow)
-    glow_draw.ellipse(
-        (W * 0.04, W * 0.10, W * 0.96, W * 0.92),
-        fill=90,
-    )
-    glow = glow.filter(ImageFilter.GaussianBlur(W // 12))
-    white = Image.new("RGB", (W, W), (255, 246, 232))
-    image = Image.composite(white, image, glow.point(lambda v: int(v * 0.55)))
+def draw_icon(bg_top, bg_bottom, bowl_color, steam_color, rim_color, line_art=False):
+    image = vertical_gradient(bg_top, bg_bottom)
     draw = ImageDraw.Draw(image, "RGBA")
 
-    # 蒸汽
-    steam_color = (255, 255, 255, 175)
-    steam(draw, int(W * 0.40), int(W * 0.245), int(W * 0.405), int(5 * S), steam_color, direction=1)
-    steam(draw, int(W * 0.52), int(W * 0.205), int(W * 0.395), int(6 * S), steam_color, direction=-1)
-    steam(draw, int(W * 0.64), int(W * 0.255), int(W * 0.405), int(5 * S), steam_color, direction=1)
+    rim_y, half_width, depth = int(W * 0.575), int(W * 0.242), int(W * 0.225)
+    points = bowl_path(rim_y, half_width, depth)
 
-    # 地面阴影
-    shadow = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-    shadow_draw = ImageDraw.Draw(shadow)
-    shadow_draw.ellipse((W * 0.30, W * 0.79, W * 0.70, W * 0.86), fill=(160, 60, 20, 70))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(W // 40))
-    image = Image.alpha_composite(image.convert("RGBA"), shadow).convert("RGB")
-    draw = ImageDraw.Draw(image, "RGBA")
-
-    # 碗身
-    body = (W * 0.22, W * 0.165, W * 0.78, W * 0.81)
-    draw.pieslice(body, start=0, end=180, fill=(255, 253, 249))
-    # 碗底的一小段收口
-    draw.ellipse((W * 0.435, W * 0.795, W * 0.565, W * 0.835), fill=(248, 238, 226))
-
-    # 碗口：橙色厚边 + 汤
-    draw.ellipse((W * 0.215, W * 0.405, W * 0.785, W * 0.585), fill=(244, 112, 43))
-    draw.ellipse((W * 0.255, W * 0.435, W * 0.745, W * 0.565), fill=(184, 58, 24))
-    draw.ellipse((W * 0.275, W * 0.448, W * 0.725, W * 0.552), fill=(198, 66, 28))
-
-    # 汤里的料：几段面 + 葱花
-    draw.line([(W * 0.33, W * 0.515), (W * 0.44, W * 0.487), (W * 0.55, W * 0.512)], fill=(246, 206, 148), width=int(9 * S), joint="curve")
-    draw.line([(W * 0.40, W * 0.535), (W * 0.53, W * 0.505), (W * 0.64, W * 0.528)], fill=(246, 206, 148), width=int(9 * S), joint="curve")
-    for x, y, r in [(0.365, 0.468, 0.012), (0.585, 0.470, 0.010), (0.505, 0.540, 0.011)]:
-        draw.ellipse(
-            (W * (x - r), W * (y - r), W * (x + r), W * (y + r)),
-            fill=(126, 191, 95),
+    if line_art:
+        draw.line(points, fill=bowl_color, width=int(W * 0.052), joint="curve")
+    else:
+        draw.polygon(points, fill=bowl_color)
+        # 碗口厚度：宽度和碗口一致，只往上加，避免两端探出小耳朵
+        draw.rounded_rectangle(
+            (W // 2 - half_width, rim_y - int(W * 0.024),
+             W // 2 + half_width, rim_y + int(W * 0.004)),
+            radius=int(W * 0.012),
+            fill=bowl_color,
         )
 
-    # 筷子：斜搭在碗沿上
-    chopsticks = Image.new("RGBA", (W, W), (0, 0, 0, 0))
-    stick_draw = ImageDraw.Draw(chopsticks)
-    length = int(W * 0.62)
-    thickness = int(W * 0.026)
-    for offset in (0, int(W * 0.045)):
-        stick_draw.rounded_rectangle(
-            (int(W * 0.10), int(W * 0.36) + offset, int(W * 0.10) + length, int(W * 0.36) + offset + thickness),
-            radius=thickness // 2,
-            fill=(74, 44, 30, 255),
-        )
-    chopsticks = chopsticks.rotate(-27, resample=Image.BICUBIC, center=(W * 0.5, W * 0.5))
-    image = Image.alpha_composite(image.convert("RGBA"), chopsticks).convert("RGB")
+    steam_stroke(draw, int(W * 0.450), int(W * 0.340), int(W * 0.505), int(W * 0.023), steam_color, lean=1.0)
+    steam_stroke(draw, int(W * 0.520), int(W * 0.272), int(W * 0.505), int(W * 0.029), steam_color, lean=-1.0)
+    steam_stroke(draw, int(W * 0.590), int(W * 0.326), int(W * 0.505), int(W * 0.021), steam_color, lean=1.0)
 
-    image = image.resize((1024, 1024), Image.LANCZOS)
-    image.save("Sources/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png")
-    print("图标已生成 1024x1024")
+    return image.resize((SIZE, SIZE), Image.LANCZOS)
+
+
+VARIANTS = {
+    "a": dict(
+        bg_top=(252, 247, 238), bg_bottom=(240, 230, 213),
+        bowl_color=(30, 90, 71), rim_color=(23, 72, 56),
+        steam_color=(201, 107, 69, 205),
+    ),
+    "b": dict(
+        bg_top=(23, 58, 48), bg_bottom=(12, 36, 29),
+        bowl_color=(246, 239, 226), rim_color=(255, 252, 246),
+        steam_color=(246, 239, 226, 150),
+    ),
+    "c": dict(
+        bg_top=(250, 250, 247), bg_bottom=(242, 242, 238),
+        bowl_color=(24, 24, 27, 255), rim_color=(24, 24, 27, 255),
+        steam_color=(24, 24, 27, 150), line_art=True,
+    ),
+    "d": dict(
+        bg_top=(255, 250, 242), bg_bottom=(247, 236, 221),
+        bowl_color=(176, 84, 47), rim_color=(156, 70, 38),
+        steam_color=(214, 154, 92, 210),
+    ),
+}
+
+
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    tiles = []
+    for key, options in VARIANTS.items():
+        icon = draw_icon(**options)
+        icon.save(OUT / f"{key}.png")
+        tiles.append(icon.resize((512, 512), Image.LANCZOS))
+
+    sheet = Image.new("RGB", (1064, 1064), (229, 229, 234))
+    positions = [(16, 16), (536, 16), (16, 536), (536, 536)]
+    for tile, position in zip(tiles, positions):
+        sheet.paste(tile, position)
+    sheet.save(OUT / "sheet.png")
+    print("生成完成：", OUT)
 
 
 if __name__ == "__main__":

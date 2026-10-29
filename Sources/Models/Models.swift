@@ -186,9 +186,59 @@ struct AppSettings: Codable, Equatable {
     var avoidDays: Int = 3
     var avoidRecent: Bool = true
     var onlyFavorites: Bool = false
-    var kindFilter: String = ""          // "" 表示不限
+    var categoryFilter: String = ""      // 分类 key，空字符串表示全部分类
     var dislikes: [String] = []
     var hapticsEnabled: Bool = true
+    var quickIngredients: [String] = AppSettings.defaultQuickIngredients
+
+    static let defaultQuickIngredients = [
+        "鸡蛋", "番茄", "土豆", "豆腐", "五花肉", "鸡腿",
+        "牛腩", "青椒", "洋葱", "香菇", "白菜", "粉丝"
+    ]
+
+    private enum CodingKeys: String, CodingKey {
+        case servings, maxMinutes, maxSpicy, avoidDays, avoidRecent, onlyFavorites
+        case categoryFilter, kindFilter, dislikes, hapticsEnabled, quickIngredients
+    }
+
+    init() {}
+
+    /// 手写解码：老版本存下的数据没有新字段，缺一个就必须回落默认值，
+    /// 否则整个 data.json 会被判成损坏（用户会以为数据丢了）。
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        servings = try container.decodeIfPresent(Int.self, forKey: .servings) ?? 2
+        maxMinutes = try container.decodeIfPresent(Int.self, forKey: .maxMinutes) ?? 90
+        maxSpicy = try container.decodeIfPresent(Int.self, forKey: .maxSpicy) ?? 3
+        avoidDays = try container.decodeIfPresent(Int.self, forKey: .avoidDays) ?? 3
+        avoidRecent = try container.decodeIfPresent(Bool.self, forKey: .avoidRecent) ?? true
+        onlyFavorites = try container.decodeIfPresent(Bool.self, forKey: .onlyFavorites) ?? false
+        categoryFilter = try container.decodeIfPresent(String.self, forKey: .categoryFilter)
+            ?? container.decodeIfPresent(String.self, forKey: .kindFilter)
+            ?? ""
+        dislikes = try container.decodeIfPresent([String].self, forKey: .dislikes) ?? []
+        hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? true
+        let quick = try container.decodeIfPresent([String].self, forKey: .quickIngredients)
+        if let quick, !quick.isEmpty {
+            quickIngredients = quick
+        } else {
+            quickIngredients = AppSettings.defaultQuickIngredients
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(servings, forKey: .servings)
+        try container.encode(maxMinutes, forKey: .maxMinutes)
+        try container.encode(maxSpicy, forKey: .maxSpicy)
+        try container.encode(avoidDays, forKey: .avoidDays)
+        try container.encode(avoidRecent, forKey: .avoidRecent)
+        try container.encode(onlyFavorites, forKey: .onlyFavorites)
+        try container.encode(categoryFilter, forKey: .categoryFilter)
+        try container.encode(dislikes, forKey: .dislikes)
+        try container.encode(hapticsEnabled, forKey: .hapticsEnabled)
+        try container.encode(quickIngredients, forKey: .quickIngredients)
+    }
 }
 
 struct CookRecord: Codable, Identifiable, Hashable {

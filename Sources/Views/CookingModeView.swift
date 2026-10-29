@@ -99,7 +99,7 @@ struct CookingModeView: View {
                         .monospacedDigit()
                 }
                 .gaugeStyle(.accessoryLinearCapacity)
-                .tint(.orange)
+                .tint(Color.accentColor)
 
                 Button("取消计时") {
                     stopTimer()
