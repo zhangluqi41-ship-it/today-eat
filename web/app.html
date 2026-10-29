@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fff6ec">
+<meta name="theme-color" content="#f7f2e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -13,7 +13,7 @@
 <style>
 :root{
   --bg:#f2f2f7; --card:#ffffff; --text:#111114; --sub:#6b6b74; --sep:rgba(60,60,67,.14);
-  --accent:#f4702b; --accent-2:#ff9a56; --accent-soft:rgba(244,112,43,.12);
+  --accent:#1e7a5f; --accent-2:#3fa37f; --accent-soft:rgba(30,122,95,.12);
   --fill:rgba(120,120,128,.12); --fill-2:rgba(120,120,128,.18);
   --green:#1f9d55; --yellow:#c98a00;
   --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -21,7 +21,7 @@
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#000000; --card:#1c1c1e; --text:#f2f2f7; --sub:#9a9aa3; --sep:rgba(255,255,255,.13);
-    --accent:#ff8a45; --accent-soft:rgba(255,138,69,.16); --fill:rgba(120,120,128,.24);
+    --accent:#4fa886; --accent-soft:rgba(79,168,134,.18); --fill:rgba(120,120,128,.24);
     --fill-2:rgba(120,120,128,.34); --green:#3ddc84; --yellow:#ffd166;
   }
 }
@@ -273,7 +273,8 @@ const defaultState = () => ({
   shopping: [],
   plan: [],
   inventory: [],
-  settings: {servings:2, maxMinutes:90, maxSpicy:3, avoidDays:3, avoidRecent:true, onlyFavorites:false, kind:"", dislikes:[]}
+  settings: {servings:2, maxMinutes:90, maxSpicy:3, avoidDays:3, avoidRecent:true, onlyFavorites:false, category:"", dislikes:[],
+  quick:["鸡蛋","番茄","土豆","豆腐","五花肉","鸡腿","牛腩","青椒","洋葱","香菇","白菜","粉丝"]}
 });
 
 let S = loadState();
@@ -335,7 +336,7 @@ function pool(){
   return S.recipes.filter(r => {
     if(r.minutes > S.settings.maxMinutes) return false;
     if(r.spicy > S.settings.maxSpicy) return false;
-    if(S.settings.kind && r.kind !== S.settings.kind) return false;
+    if(S.settings.category && r.category !== S.settings.category) return false;
     if(S.settings.onlyFavorites && !S.favorites.includes(r.id)) return false;
     if(S.settings.avoidRecent && avoid.has(r.id)) return false;
     const bad = S.settings.dislikes.some(w => w && (r.ingredients || []).some(i => i.name.includes(w)));
@@ -389,14 +390,10 @@ function viewTonight(){
 
   <div class="card">
     <div class="card-title">抽签范围</div>
-    <label class="row"><span>只要</span>
-      <select data-set="kind">
-        <option value="" ${S.settings.kind===""?"selected":""}>不限</option>
-        <option value="荤" ${S.settings.kind==="荤"?"selected":""}>荤菜</option>
-        <option value="素" ${S.settings.kind==="素"?"selected":""}>素菜</option>
-        <option value="汤" ${S.settings.kind==="汤"?"selected":""}>汤水</option>
-        <option value="蛋" ${S.settings.kind==="蛋"?"selected":""}>蛋类</option>
-        <option value="豆" ${S.settings.kind==="豆"?"selected":""}>豆制品</option>
+    <label class="row"><span>只要这一类</span>
+      <select data-set="category">
+        <option value="" ${!S.settings.category?"selected":""}>全部分类</option>
+        ${CATS.map(c => `<option value="${c.key}" ${S.settings.category===c.key?"selected":""}>${c.emoji} ${c.name}</option>`).join("")}
       </select>
     </label>
     <label class="row"><span>最多花多少时间</span>
@@ -525,7 +522,7 @@ function matchResults(){
 function viewKitchen(){
   const res = matchResults();
   const shown = ui.showAllMatches ? res : res.slice(0,20);
-  const quick = ["鸡蛋","番茄","土豆","豆腐","五花肉","鸡腿","牛腩","青椒","洋葱","香菇","白菜","粉丝"];
+  const quick = S.settings.quick || [];
   return `
   <h1 class="large-title">厨房</h1>
   <div class="card">
@@ -539,6 +536,7 @@ function viewKitchen(){
     </div>` : ""}
     <div class="chips" style="padding:8px 0 0">
       ${quick.map(w => `<button class="chip" data-act="quick-inv" data-word="${esc(w)}" style="font-size:13px;min-height:28px">＋${esc(w)}</button>`).join("")}
+      <button class="chip" data-act="edit-pantry" style="font-size:13px;min-height:28px;color:var(--accent)">✎ 编辑</button>
     </div>
   </div>
   ${S.inventory.length === 0 ? `<div class="empty"><div class="big">🧺</div>先告诉我冰箱里有什么，<br>我按“还差几样”给你排菜</div>` :
@@ -978,6 +976,33 @@ function pickRecipe(id){
 }
 
 /* ---------- 三选一 ---------- */
+function openPantryEditor(){
+  const sheet = document.getElementById("sheet");
+  const items = S.settings.quick || [];
+  sheet.innerHTML = `<div class="sheet">
+    <div class="sheet-head">
+      <button data-act="close-sheet">关闭</button>
+      <span>常备食材</span>
+      <span style="width:44px"></span>
+    </div>
+    <div class="sheet-body">
+      <div class="hint" style="padding:0 0 10px">这一排只是快捷入口，点一下就会加进「家里有什么」。</div>
+      <div class="list" style="margin:0 0 14px">
+        ${items.length ? items.map(w => `<div class="item">
+          <div class="main"><div class="name">${esc(w)}</div></div>
+          <button class="btn small" data-act="pantry-del" data-word="${esc(w)}">删</button>
+        </div>`).join("") : `<div class="item"><div class="main"><div class="meta">还没有常备食材</div></div></div>`}
+      </div>
+      <div class="tools" style="padding:0">
+        <input class="search" id="pantry" placeholder="加一项，比如：豆芽">
+        <button class="btn small" data-act="pantry-add">加入</button>
+      </div>
+      <button class="btn" style="width:100%;margin-top:14px" data-act="pantry-reset">恢复默认列表</button>
+    </div>
+  </div>`;
+  document.body.style.overflow = "hidden";
+}
+
 function openTriple(){
   const poolList = pool().slice().sort(() => Math.random() - .5).slice(0,3);
   ui.triple = poolList.map(r => r.id);
@@ -1199,6 +1224,21 @@ document.addEventListener("click", e => {
       const key = el.dataset.key;
       S.settings[key] = !S.settings[key]; save(); render(); break;
     }
+    case "edit-pantry": openPantryEditor(); break;
+    case "pantry-add": {
+      const el = document.getElementById("pantry");
+      const w = (el && el.value || "").trim();
+      if(!w) break;
+      if(!S.settings.quick.includes(w)) S.settings.quick.push(w);
+      save(); openPantryEditor(); break;
+    }
+    case "pantry-del": {
+      S.settings.quick = S.settings.quick.filter(x => x !== el.dataset.word);
+      save(); openPantryEditor(); break;
+    }
+    case "pantry-reset":
+      S.settings.quick = ["鸡蛋","番茄","土豆","豆腐","五花肉","鸡腿","牛腩","青椒","洋葱","香菇","白菜","粉丝"];
+      save(); openPantryEditor(); break;
     case "add-inv": addInv(); break;
     case "quick-inv": addInv(el.dataset.word); break;
     case "del-inv": {

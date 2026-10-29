@@ -112,7 +112,11 @@ def ensure_repo(login: str) -> str:
 
 
 def local_files() -> list[str]:
-    result = subprocess.run([GIT, "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True)
+    # core.quotepath=false：中文文件名不能被转义成 "\344\273\212" 这种形式，否则读不到文件
+    result = subprocess.run(
+        [GIT, "-c", "core.quotepath=false", "ls-files"],
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", check=True,
+    )
     return [line for line in result.stdout.splitlines() if line.strip()]
 
 
@@ -148,14 +152,20 @@ def push_with_git(login: str) -> bool:
     return False
 
 
-def seed_readme(login: str) -> str:
-    """空仓库先用 Contents API 建一个初始提交，之后 blob 接口才可用。"""
+def ensure_initial_commit(login: str) -> str:
+    """返回远端当前 head；空仓库则先用 Contents API 建一个初始提交。"""
+    try:
+        ref = api("GET", f"/repos/{login}/{REPO_NAME}/git/ref/heads/{BRANCH}")
+        return ref["object"]["sha"]
+    except RuntimeError as error:
+        if "-> 404" not in str(error):
+            raise
     content = base64.b64encode("今晚吃什么\n".encode()).decode()
     result = api("PUT", f"/repos/{login}/{REPO_NAME}/contents/README.md", {
         "message": "init",
         "content": content,
     })
-    print("  已建初始提交（空仓库必须先有 commit）", flush=True)
+    print("  空仓库已建初始提交", flush=True)
     return result["commit"]["sha"]
 
 
@@ -163,7 +173,7 @@ def push_with_api(login: str) -> str:
     """git push 不通时的兜底：blobs -> tree -> commit -> ref。"""
     files = local_files()
     print(f"改用 REST API 上传 {len(files)} 个文件…", flush=True)
-    parent = seed_readme(login)
+    parent = ensure_initial_commit(login)
     parent_commit = api("GET", f"/repos/{login}/{REPO_NAME}/git/commits/{parent}")
     tree = []
     for index, rel in enumerate(files, start=1):
